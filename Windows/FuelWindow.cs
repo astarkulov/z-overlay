@@ -71,7 +71,7 @@ public sealed class FuelWindow : OverlayWindowBase
         var root = _rootStack;
 
         // Header
-        _headerGrid = new Grid { Height = 19 };
+        _headerGrid = new Grid { Margin = new Thickness(4, 1, 4, 1) };
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -79,11 +79,11 @@ public sealed class FuelWindow : OverlayWindowBase
         _titleText = new TextBlock
         {
             Text = "Fuel",
-            FontSize = 10.5,
+            FontSize = 11.5,
             FontWeight = FontWeights.SemiBold,
             Foreground = TextWhite,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(6, 0, 5, 0)
+            Margin = new Thickness(0, 0, 5, 0)
         };
         labels.Add(_titleText);
         _headerGrid.Children.Add(_titleText);
@@ -92,7 +92,7 @@ public sealed class FuelWindow : OverlayWindowBase
         _modeBadgeText = new TextBlock
         {
             Text = "AVG",
-            FontSize = 9.5,
+            FontSize = 11,
             FontWeight = FontWeights.SemiBold,
             Foreground = AccentSky,
             Margin = new Thickness(0, 0, 5, 0),
@@ -101,7 +101,7 @@ public sealed class FuelWindow : OverlayWindowBase
         _stopsText = new TextBlock
         {
             Text = "NO STOP",
-            FontSize = 9.5,
+            FontSize = 11,
             Foreground = TextMuted,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -115,7 +115,7 @@ public sealed class FuelWindow : OverlayWindowBase
         _statusText = new TextBlock
         {
             Text = "OK",
-            FontSize = 9,
+            FontSize = 10,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite
         };
@@ -125,7 +125,7 @@ public sealed class FuelWindow : OverlayWindowBase
             Background = OkGreen,
             CornerRadius = new CornerRadius(2),
             Padding = new Thickness(4, 0, 4, 0),
-            Margin = new Thickness(0, 2, 5, 2),
+            Margin = new Thickness(0, 1, 0, 1),
             VerticalAlignment = VerticalAlignment.Center,
             Child = _statusText
         };
@@ -236,9 +236,9 @@ public sealed class FuelWindow : OverlayWindowBase
         foreach (var l in _allLabels) l.FontFamily = uiFont;
         foreach (var v in _allValues) v.FontFamily = monoFont;
 
-        _titleText.FontSize = FontSz(10.5);
-        _modeBadgeText.FontSize = FontSz(9.5);
-        _stopsText.FontSize = FontSz(9.5);
+        _titleText.FontSize = FontSz(11.5);
+        _modeBadgeText.FontSize = FontSz(11);
+        _stopsText.FontSize = FontSz(11);
         _fuelLevelVal.FontSize = FontSz(15.5);
         _estLapsVal.FontSize = FontSz(15.5);
         _raceLapsVal.FontSize = FontSz(15.5);

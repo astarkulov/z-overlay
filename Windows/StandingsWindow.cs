@@ -63,7 +63,7 @@ public sealed class StandingsWindow : OverlayWindowBase
         _rootStack = new StackPanel { Effect = GetActiveShadow() };
         Grid.SetIsSharedSizeScope(_rootStack, true);
 
-        _headerGrid = new Grid { Height = 20 };
+        _headerGrid = new Grid { Margin = new Thickness(3, 1, 3, 1) };
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -71,27 +71,27 @@ public sealed class StandingsWindow : OverlayWindowBase
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(5, 0, 6, 0)
+            Margin = new Thickness(1, 0, 6, 0)
         };
         _nativeTitleText = new TextBlock
         {
             Text = "STANDINGS",
-            FontSize = 10.5,
+            FontSize = 12,
             FontWeight = FontWeights.Bold,
             Foreground = IRacingGold,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 4, 0)
+            Margin = new Thickness(0, 0, 5, 0)
         };
         leftTrack.Children.Add(_nativeTitleText);
-        leftTrack.Children.Add(new HudMetricIcon(HudIconKind.Flag, "#7DD3FC", 10) { Margin = new Thickness(0, 0, 3, 0) });
+        leftTrack.Children.Add(new HudMetricIcon(HudIconKind.Flag, "#7DD3FC", 11.5) { Margin = new Thickness(0, 0, 3, 0) });
         _trackText = new TextBlock
         {
             Text = "Standings",
-            FontSize = 11,
+            FontSize = 12,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
             VerticalAlignment = VerticalAlignment.Center,
-            MaxWidth = 180,
+            MaxWidth = 185,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
         leftTrack.Children.Add(_trackText);
@@ -102,36 +102,36 @@ public sealed class StandingsWindow : OverlayWindowBase
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 5, 0)
+            Margin = new Thickness(0, 0, 1, 0)
         };
         _sessionTypeText = new TextBlock
         {
             Text = "RACE",
-            FontSize = 10,
+            FontSize = 11.5,
             FontWeight = FontWeights.Bold,
             Foreground = AccentSky,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 5, 0)
+            Margin = new Thickness(0, 0, 6, 0)
         };
         rightMeta.Children.Add(_sessionTypeText);
 
-        rightMeta.Children.Add(new HudMetricIcon(HudIconKind.LapLoop, "#CBD5E1", 10) { Margin = new Thickness(0, 0, 2, 0) });
+        rightMeta.Children.Add(new HudMetricIcon(HudIconKind.LapLoop, "#CBD5E1", 11.5) { Margin = new Thickness(0, 0, 2, 0) });
         _lapsText = new TextBlock
         {
             Text = "0/0",
-            FontSize = 10.5,
+            FontSize = 12,
             FontWeight = FontWeights.Bold,
             Foreground = TextSoft,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 5, 0)
+            Margin = new Thickness(0, 0, 6, 0)
         };
         rightMeta.Children.Add(_lapsText);
 
-        rightMeta.Children.Add(new HudMetricIcon(HudIconKind.Stopwatch, "#CBD5E1", 10) { Margin = new Thickness(0, 0, 2, 0) });
+        rightMeta.Children.Add(new HudMetricIcon(HudIconKind.Stopwatch, "#CBD5E1", 11.5) { Margin = new Thickness(0, 0, 2, 0) });
         _timerText = new TextBlock
         {
             Text = "00:00",
-            FontSize = 10.5,
+            FontSize = 12,
             FontWeight = FontWeights.Bold,
             Foreground = TextSoft,
             VerticalAlignment = VerticalAlignment.Center
@@ -149,7 +149,7 @@ public sealed class StandingsWindow : OverlayWindowBase
         _legendDivider = new Border { Height = 1, Background = Hairline };
         _rootStack.Children.Add(_legendDivider);
 
-        _bodyPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 1) };
+        _bodyPanel = new StackPanel { Margin = new Thickness(0) };
         _rootStack.Children.Add(_bodyPanel);
 
         _outerBorder.Child = _rootStack;
@@ -175,17 +175,17 @@ public sealed class StandingsWindow : OverlayWindowBase
 
         _nativeTitleText.Visibility = native ? Visibility.Visible : Visibility.Collapsed;
         _nativeTitleText.FontFamily = _uiFont;
-        _nativeTitleText.FontSize = FontSz(10);
+        _nativeTitleText.FontSize = FontSz(12);
         _trackText.FontFamily = _uiFont;
-        _trackText.FontSize = FontSz(10.5);
+        _trackText.FontSize = FontSz(12);
         _trackText.Foreground = native ? NativeMuted : TextWhite;
         _sessionTypeText.FontFamily = _uiFont;
-        _sessionTypeText.FontSize = FontSz(9.5);
+        _sessionTypeText.FontSize = FontSz(11.5);
         _sessionTypeText.Foreground = native ? IRacingGold : AccentSky;
         _lapsText.FontFamily = _monoFont;
-        _lapsText.FontSize = FontSz(10.5);
+        _lapsText.FontSize = FontSz(12);
         _timerText.FontFamily = _monoFont;
-        _timerText.FontSize = FontSz(10.5);
+        _timerText.FontSize = FontSz(12);
 
         RebuildLegend();
         _renderTick = 0;
@@ -312,7 +312,10 @@ public sealed class StandingsWindow : OverlayWindowBase
                 : Math.Min(3, group.Drivers.Count);
 
             for (int i = 0; i < maxForClass; i++)
-                _bodyPanel.Children.Add(BuildDriverRow(group.Drivers[i], i % 2 == 1, snap.Session.IsRaceSession));
+            {
+                bool isVeryLast = (c == shownClasses - 1) && (i == maxForClass - 1);
+                _bodyPanel.Children.Add(BuildDriverRow(group.Drivers[i], i % 2 == 1, snap.Session.IsRaceSession, isVeryLast));
+            }
         }
     }
 
@@ -386,7 +389,7 @@ public sealed class StandingsWindow : OverlayWindowBase
         };
     }
 
-    private UIElement BuildDriverRow(StandingsEntry d, bool alt, bool isRaceSession)
+    private UIElement BuildDriverRow(StandingsEntry d, bool alt, bool isRaceSession, bool isVeryLast)
     {
         bool native = IsIRacingNative;
         double rowH = Math.Round((native ? 20 : 19) * Math.Max(1.0, Settings.HudFontScale * 0.92));
@@ -598,8 +601,8 @@ public sealed class StandingsWindow : OverlayWindowBase
             Background = d.IsPlayer
                 ? (native ? BgPlayerNative : BgPlayerCarbon)
                 : (native ? Brushes.Transparent : (alt ? BgRowAltCarbon : Brushes.Transparent)),
-            BorderBrush = native ? NativeRowDivider : Brushes.Transparent,
-            BorderThickness = new Thickness(0, 0, 0, native ? 1 : 0),
+            BorderBrush = native && !isVeryLast ? NativeRowDivider : Brushes.Transparent,
+            BorderThickness = new Thickness(0, 0, 0, native && !isVeryLast ? 1 : 0),
             Child = g
         };
     }
