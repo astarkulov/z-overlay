@@ -13,6 +13,7 @@ public sealed class CornerSpeedTracker
     private const int MaxHistory = 4;
 
     private readonly float[] _prevCarPct = new float[64];
+    private readonly float[] _playerSectorBestMs = new float[TrackBuckets];
     private readonly float[] _fastestSectorMinMs = new float[TrackBuckets];
     private readonly List<CornerSpeedRecord> _history = new(MaxHistory);
 
@@ -34,6 +35,7 @@ public sealed class CornerSpeedTracker
     public void Reset()
     {
         Array.Fill(_prevCarPct, -1f);
+        Array.Fill(_playerSectorBestMs, 0f);
         Array.Fill(_fastestSectorMinMs, 0f);
         _history.Clear();
         _lastUpdateSec = -1;
@@ -145,13 +147,21 @@ public sealed class CornerSpeedTracker
                     // Only record genuine corners (at least ~12.5 km/h drop from entry speed)
                     if (_entrySpeedMs - _curCornerMinMs >= 3.5f)
                     {
-                        float refMin = LookupSectorFastestMinMs(_curCornerApexPct);
+                        float prevPb = LookupPlayerBestMs(_curCornerApexPct);
+                        float newPb = Math.Max(prevPb, _curCornerMinMs);
+                        RecordPlayerBestMs(_curCornerApexPct, newPb);
+
+                        float refFast = LookupSectorFastestMinMs(_curCornerApexPct);
+                        if (refFast > 5f && newPb > refFast) refFast = newPb;
+
                         _history.Insert(0, new CornerSpeedRecord
                         {
                             Label = "",
                             PlayerMinMs = _curCornerMinMs,
-                            SessionFastestMinMs = refMin > 5f ? refMin : _curCornerMinMs,
-                            HasFastestRef = refMin > 5f,
+                            PlayerBestMinMs = newPb,
+                            SessionFastestMinMs = refFast > 5f ? refFast : newPb,
+                            HasBestRef = true,
+                            HasFastestRef = refFast > 5f,
                             IsLiveCorner = false
                         });
                         while (_history.Count > MaxHistory)
@@ -172,13 +182,16 @@ public sealed class CornerSpeedTracker
         var result = new List<CornerSpeedRecord>(MaxHistory);
         if (_inCorner && _curCornerMinMs < 150f && (_entrySpeedMs - _curCornerMinMs >= 2.5f))
         {
-            float refMin = LookupSectorFastestMinMs(_curCornerApexPct);
+            float pb = LookupPlayerBestMs(_curCornerApexPct);
+            float refFast = LookupSectorFastestMinMs(_curCornerApexPct);
             result.Add(new CornerSpeedRecord
             {
                 Label = "LIVE",
                 PlayerMinMs = _curCornerMinMs,
-                SessionFastestMinMs = refMin > 5f ? refMin : _curCornerMinMs,
-                HasFastestRef = refMin > 5f,
+                PlayerBestMinMs = pb > 5f ? pb : _curCornerMinMs,
+                SessionFastestMinMs = refFast > 5f ? refFast : (pb > 5f ? pb : _curCornerMinMs),
+                HasBestRef = pb > 5f,
+                HasFastestRef = refFast > 5f,
                 IsLiveCorner = true
             });
             for (int i = 0; i < _history.Count && result.Count < MaxHistory; i++)
@@ -190,6 +203,28 @@ public sealed class CornerSpeedTracker
         }
 
         return result;
+    }
+
+    private void RecordPlayerBestMs(float apexPct, float bestMs)
+    {
+        if (apexPct < 0f) return;
+        int b = Math.Clamp((int)(apexPct * TrackBuckets) % TrackBuckets, 0, TrackBuckets - 1);
+        if (bestMs > _playerSectorBestMs[b])
+            _playerSectorBestMs[b] = bestMs;
+    }
+
+    private float LookupPlayerBestMs(float apexPct)
+    {
+        if (apexPct < 0f) return 0f;
+        int center = Math.Clamp((int)(apexPct * TrackBuckets) % TrackBuckets, 0, TrackBuckets - 1);
+        float maxVal = 0f;
+        for (int offset = -2; offset <= 2; offset++)
+        {
+            int b = (center + offset + TrackBuckets) % TrackBuckets;
+            float v = _playerSectorBestMs[b];
+            if (v > maxVal) maxVal = v;
+        }
+        return maxVal;
     }
 
     private float LookupSectorFastestMinMs(float apexPct)

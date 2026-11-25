@@ -45,9 +45,11 @@ public enum SessionFlagMask : uint
 
 public sealed class CornerSpeedRecord
 {
-    public string Label { get; set; } = "C1";
+    public string Label { get; set; } = "";
     public float PlayerMinMs { get; set; }
+    public float PlayerBestMinMs { get; set; }
     public float SessionFastestMinMs { get; set; }
+    public bool HasBestRef { get; set; }
     public bool HasFastestRef { get; set; }
     public bool IsLiveCorner { get; set; }
 }

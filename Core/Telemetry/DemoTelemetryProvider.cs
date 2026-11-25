@@ -225,13 +225,15 @@ public sealed class DemoTelemetryProvider
                     {
                         Label = phase is >= 0.30 and < 0.65 ? "LIVE" : "",
                         PlayerMinMs = (phase is >= 0.30 and < 0.65 ? Math.Min(speedKmh, 140f) : 94f) / 3.6f,
-                        SessionFastestMinMs = 96f / 3.6f,
+                        PlayerBestMinMs = 96f / 3.6f,
+                        SessionFastestMinMs = 99f / 3.6f,
+                        HasBestRef = true,
                         HasFastestRef = true,
                         IsLiveCorner = phase is >= 0.30 and < 0.65
                     },
-                    new() { Label = "", PlayerMinMs = 86f / 3.6f, SessionFastestMinMs = 89f / 3.6f, HasFastestRef = true },
-                    new() { Label = "", PlayerMinMs = 96f / 3.6f, SessionFastestMinMs = 94f / 3.6f, HasFastestRef = true },
-                    new() { Label = "", PlayerMinMs = 68f / 3.6f, SessionFastestMinMs = 71f / 3.6f, HasFastestRef = true }
+                    new() { PlayerMinMs = 86f / 3.6f, PlayerBestMinMs = 88f / 3.6f, SessionFastestMinMs = 91f / 3.6f, HasBestRef = true, HasFastestRef = true },
+                    new() { PlayerMinMs = 96f / 3.6f, PlayerBestMinMs = 96f / 3.6f, SessionFastestMinMs = 98f / 3.6f, HasBestRef = true, HasFastestRef = true },
+                    new() { PlayerMinMs = 68f / 3.6f, PlayerBestMinMs = 70f / 3.6f, SessionFastestMinMs = 72f / 3.6f, HasBestRef = true, HasFastestRef = true }
                 }
             },
             Fuel = new FuelTelemetry

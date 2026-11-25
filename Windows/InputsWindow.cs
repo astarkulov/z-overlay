@@ -76,6 +76,7 @@ public sealed class InputsWindow : OverlayWindowBase
     private static readonly SolidColorBrush AbsBrush = FormatHelpers.GetFrozenBrush("#FCD34D");
     private static readonly SolidColorBrush DeltaGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
     private static readonly SolidColorBrush DeltaRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
+    private static readonly SolidColorBrush PurpleFastest = FormatHelpers.GetFrozenBrush("#E879F9");
     private static readonly SolidColorBrush IRacingGold = FormatHelpers.GetFrozenBrush("#F2B830");
     private static readonly SolidColorBrush CornerLiveBg = FormatHelpers.GetFrozenBrush("#2838BDF8");
     private static readonly SolidColorBrush CornerIdleBg = FormatHelpers.GetFrozenBrush("#12FFFFFF");
@@ -84,9 +85,9 @@ public sealed class InputsWindow : OverlayWindowBase
     {
         public Border Box = null!;
         public Border TopAccent = null!;
-        public TextBlock PlayerSpeed = null!;
-        public TextBlock Delta = null!;
-        public TextBlock FastestRef = null!;
+        public TextBlock PlayerSpeed = null!;   // WHITE: current / last
+        public TextBlock PersonalBest = null!;  // GREEN: my session max in this corner
+        public TextBlock SessionFastest = null!;// PURPLE: session fastest in this corner
     }
 
     public InputsWindow(AppSettings settings) : base("Inputs", settings)
@@ -354,49 +355,50 @@ public sealed class InputsWindow : OverlayWindowBase
         {
             Height = 2,
             Background = Brushes.Transparent,
-            Margin = new Thickness(0, 0, 0, 3)
+            Margin = new Thickness(0, 0, 0, 2)
         };
         outerStack.Children.Add(s.TopAccent);
 
-        // Top row: BIG bold player min speed + crisp delta right next to it
-        var topRow = new Grid { Margin = new Thickness(6, 0, 6, 0) };
-        topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
+        // Top: BIG WHITE current / last corner min speed
         s.PlayerSpeed = new TextBlock
         {
             Text = "--",
             FontSize = 22,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
-            VerticalAlignment = VerticalAlignment.Bottom
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(6, 0, 6, 0)
         };
-        Grid.SetColumn(s.PlayerSpeed, 0);
-        topRow.Children.Add(s.PlayerSpeed);
+        outerStack.Children.Add(s.PlayerSpeed);
 
-        s.Delta = new TextBlock
+        // Bottom row: GREEN (my max / PB) on left | PURPLE (session fastest) on right
+        var refsRow = new Grid { Margin = new Thickness(6, 0, 6, 4) };
+        refsRow.ColumnDefinitions.Add(new ColumnDefinition());
+        refsRow.ColumnDefinitions.Add(new ColumnDefinition());
+
+        s.PersonalBest = new TextBlock
         {
-            Text = "",
+            Text = "--",
             FontSize = 13,
             FontWeight = FontWeights.Bold,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(5, 0, 0, 0)
+            Foreground = DeltaGreen,
+            HorizontalAlignment = HorizontalAlignment.Left
         };
-        Grid.SetColumn(s.Delta, 1);
-        topRow.Children.Add(s.Delta);
-        outerStack.Children.Add(topRow);
+        Grid.SetColumn(s.PersonalBest, 0);
+        refsRow.Children.Add(s.PersonalBest);
 
-        // Bottom line: clean session fastest benchmark
-        s.FastestRef = new TextBlock
+        s.SessionFastest = new TextBlock
         {
-            Text = "",
-            FontSize = 12,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = TextMuted,
-            Margin = new Thickness(6, 0, 6, 4)
+            Text = "--",
+            FontSize = 13,
+            FontWeight = FontWeights.Bold,
+            Foreground = PurpleFastest,
+            HorizontalAlignment = HorizontalAlignment.Right
         };
-        outerStack.Children.Add(s.FastestRef);
+        Grid.SetColumn(s.SessionFastest, 1);
+        refsRow.Children.Add(s.SessionFastest);
+
+        outerStack.Children.Add(refsRow);
 
         s.Box = new Border
         {
@@ -405,7 +407,7 @@ public sealed class InputsWindow : OverlayWindowBase
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
             Margin = new Thickness(2.5, 0, 2.5, 0),
-            MinWidth = 78,
+            MinWidth = 76,
             Child = outerStack
         };
 
@@ -478,12 +480,12 @@ public sealed class InputsWindow : OverlayWindowBase
 
         foreach (var slot in _cornerSlots)
         {
-            slot.Delta.FontFamily = monoFont;
-            slot.Delta.FontSize = FontSz(13);
             slot.PlayerSpeed.FontFamily = monoFont;
             slot.PlayerSpeed.FontSize = FontSz(22);
-            slot.FastestRef.FontFamily = monoFont;
-            slot.FastestRef.FontSize = FontSz(12);
+            slot.PersonalBest.FontFamily = monoFont;
+            slot.PersonalBest.FontSize = FontSz(13);
+            slot.SessionFastest.FontFamily = monoFont;
+            slot.SessionFastest.FontSize = FontSz(13);
         }
 
         // 100% Modular visibility + clean divider management
@@ -649,9 +651,8 @@ public sealed class InputsWindow : OverlayWindowBase
         var list = inp.RecentCorners;
         bool native = IsIRacingNative;
 
-        // Progressive visual hierarchy: slot 0 (most recent corner you just drove) is brightest,
-        // slots 1..3 fade softly so your eye immediately lands on the latest corner without labels!
-        double[] slotOpacities = { 1.0, 0.82, 0.66, 0.52 };
+        // Slot 0 = most recent corner you just drove (brightest), slots 1..3 fade softly
+        double[] slotOpacities = { 1.0, 0.84, 0.68, 0.54 };
 
         for (int i = 0; i < 4; i++)
         {
@@ -665,18 +666,18 @@ public sealed class InputsWindow : OverlayWindowBase
                 slot.TopAccent.Background = Brushes.Transparent;
                 slot.PlayerSpeed.Text = "--";
                 slot.PlayerSpeed.Foreground = TextMuted;
-                slot.FastestRef.Text = "★ --";
-                slot.Delta.Text = "";
+                slot.PersonalBest.Text = "--";
+                slot.SessionFastest.Text = "--";
                 continue;
             }
 
             var rec = list[i];
-            int pSpd = (int)Math.Round(rec.PlayerMinMs * conv);
-            int fSpd = (int)Math.Round(rec.SessionFastestMinMs * conv);
-            int diff = pSpd - fSpd;
+            int curSpd = (int)Math.Round(rec.PlayerMinMs * conv);
+            int pbSpd = (int)Math.Round(rec.PlayerBestMinMs * conv);
+            int fastSpd = (int)Math.Round(rec.SessionFastestMinMs * conv);
 
             bool isLatest = i == 0;
-            Brush accentColor = rec.IsLiveCorner ? ClutchBrush : (native ? IRacingGold : ClutchBrush);
+            Brush accentColor = rec.IsLiveCorner ? ClutchBrush : (native ? IRacingGold : TextWhite);
 
             slot.TopAccent.Background = isLatest ? accentColor : Brushes.Transparent;
             slot.Box.Background = rec.IsLiveCorner
@@ -684,24 +685,14 @@ public sealed class InputsWindow : OverlayWindowBase
                 : (isLatest ? FormatHelpers.GetFrozenBrush("#1CFFFFFF") : CornerIdleBg);
             slot.Box.BorderBrush = isLatest
                 ? accentColor
-                : FormatHelpers.GetFrozenBrush("#20FFFFFF");
+                : FormatHelpers.GetFrozenBrush("#22FFFFFF");
 
-            slot.PlayerSpeed.Text = pSpd.ToString();
-            slot.PlayerSpeed.Foreground = rec.IsLiveCorner ? ClutchBrush : TextWhite;
+            // White = current/last, Green = my PB max, Purple = session fastest
+            slot.PlayerSpeed.Text = curSpd.ToString();
+            slot.PlayerSpeed.Foreground = TextWhite;
 
-            if (rec.HasFastestRef && fSpd > 10)
-            {
-                slot.FastestRef.Text = $"★ {fSpd}";
-                slot.FastestRef.Foreground = native ? IRacingGold : TextMuted;
-                slot.Delta.Text = diff > 0 ? $"+{diff}" : diff.ToString();
-                slot.Delta.Foreground = diff >= 0 ? DeltaGreen : DeltaRed;
-            }
-            else
-            {
-                slot.FastestRef.Text = rec.IsLiveCorner ? "LIVE" : "MIN";
-                slot.FastestRef.Foreground = TextMuted;
-                slot.Delta.Text = "";
-            }
+            slot.PersonalBest.Text = rec.HasBestRef && pbSpd > 10 ? pbSpd.ToString() : "--";
+            slot.SessionFastest.Text = rec.HasFastestRef && fastSpd > 10 ? fastSpd.ToString() : "--";
         }
     }
 }
