@@ -184,6 +184,7 @@ public sealed class SessionHeaderTelemetry
 {
     public string TrackName { get; set; } = "Disconnected";
     public string SessionType { get; set; } = "WAIT";
+    public bool IsRaceSession { get; set; } = true;
     public int CurrentLap { get; set; }
     public int TotalLaps { get; set; }
     public double TimeRemainingSeconds { get; set; }

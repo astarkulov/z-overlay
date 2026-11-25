@@ -330,8 +330,11 @@ public sealed class IRacingSdkReader : IDisposable
             fuelMarginLaps,
             fuelCalcMode);
 
+        string sessionType = _yamlMeta.SessionTypesByNum.TryGetValue(sessionNum, out var st) ? st : "SESSION";
+        bool isRaceSession = sessionType.Contains("RACE", StringComparison.OrdinalIgnoreCase);
+
         // Standings grouped by class + SOF + projected +/- iR + intervals + purple best lap + tires
-        var standings = BuildStandings(playerIdx, maxStandingsRows, out int overallSof);
+        var standings = BuildStandings(playerIdx, sessionNum, maxStandingsRows, isRaceSession, out int overallSof);
 
         // Relative around player + pace delta vs player
         var relative = BuildRelative(playerIdx, relativeEachSide);
@@ -339,7 +342,6 @@ public sealed class IRacingSdkReader : IDisposable
         // Radar
         var radar = BuildRadar(playerIdx);
 
-        string sessionType = _yamlMeta.SessionTypesByNum.TryGetValue(sessionNum, out var st) ? st : "SESSION";
         int totalLaps = ReadInt("SessionLapsTotal");
         if (totalLaps >= 30000) totalLaps = 0;
         int wetness = ReadInt("TrackWetness");
@@ -354,6 +356,7 @@ public sealed class IRacingSdkReader : IDisposable
             {
                 TrackName = _yamlMeta.TrackDisplayName,
                 SessionType = sessionType,
+                IsRaceSession = isRaceSession,
                 CurrentLap = Math.Max(0, currentLap),
                 TotalLaps = totalLaps,
                 TimeRemainingSeconds = Math.Max(0, timeRemain),
@@ -373,10 +376,11 @@ public sealed class IRacingSdkReader : IDisposable
         };
     }
 
-    private List<StandingsClassGroup> BuildStandings(int playerIdx, int maxRows, out int overallSof)
+    private List<StandingsClassGroup> BuildStandings(int playerIdx, int sessionNum, int maxRows, bool isRaceSession, out int overallSof)
     {
         var activeDrivers = new List<StandingsEntry>();
         var allIRatings = new List<int>();
+        _yamlMeta.SessionResultsByNum.TryGetValue(sessionNum, out var yamlResults);
 
         foreach (var kv in _yamlMeta.DriversByIdx)
         {
@@ -387,17 +391,32 @@ public sealed class IRacingSdkReader : IDisposable
 
             allIRatings.Add(meta.IRating);
 
-            int classPos = _carClassPosition[idx];
-            int overallPos = _carPosition[idx];
+            YamlSessionResult? yRes = null;
+            yamlResults?.TryGetValue(idx, out yRes);
+
+            int classPos = _carClassPosition[idx] > 0
+                ? _carClassPosition[idx]
+                : (yRes != null && yRes.ClassPosition >= 0 ? yRes.ClassPosition + 1 : 99);
+            int overallPos = _carPosition[idx] > 0
+                ? _carPosition[idx]
+                : (yRes != null && yRes.Position > 0 ? yRes.Position : 99);
+
+            float bestLap = _carBestLap[idx] > 10f
+                ? _carBestLap[idx]
+                : (yRes != null && yRes.FastestTime > 10f ? yRes.FastestTime : 0f);
+            float lastLap = _carLastLap[idx] > 10f
+                ? _carLastLap[idx]
+                : (yRes != null && yRes.LastTime > 10f ? yRes.LastTime : 0f);
+
             var (tireCode, tireColor) = MapTireCompound(_carTireCompound[idx]);
             int stintLaps = Math.Max(0, _carLap[idx] - _lastPitLap[idx]);
-            int posDelta = (_startClassPos[idx] > 0 && classPos > 0) ? (_startClassPos[idx] - classPos) : 0;
+            int posDelta = (_startClassPos[idx] > 0 && classPos > 0 && classPos < 99) ? (_startClassPos[idx] - classPos) : 0;
 
             activeDrivers.Add(new StandingsEntry
             {
                 CarIdx = idx,
-                ClassPosition = classPos > 0 ? classPos : 99,
-                OverallPosition = overallPos > 0 ? overallPos : 99,
+                ClassPosition = classPos,
+                OverallPosition = overallPos,
                 PosDelta = posDelta,
                 CarNumber = meta.CarNumber,
                 Brand = meta.Brand,
@@ -409,8 +428,8 @@ public sealed class IRacingSdkReader : IDisposable
                 LicenseColorHex = meta.LicColorHex,
                 IRating = meta.IRating,
                 GapToLeaderSeconds = Math.Max(0f, _carF2Time[idx]),
-                LastLapSeconds = _carLastLap[idx] > 0f ? _carLastLap[idx] : 0f,
-                BestLapSeconds = _carBestLap[idx] > 0f ? _carBestLap[idx] : 0f,
+                LastLapSeconds = lastLap,
+                BestLapSeconds = bestLap,
                 TireCode = tireCode,
                 TireColorHex = tireColor,
                 StintLaps = stintLaps,
@@ -432,15 +451,30 @@ public sealed class IRacingSdkReader : IDisposable
 
         foreach (var g in grouped)
         {
-            var ordered = g
-                .OrderBy(d => d.ClassPosition)
-                .ThenBy(d => d.OverallPosition)
-                .ToList();
-
-            // Re-index if session hasn't assigned positions yet (practice/grid)
-            for (int i = 0; i < ordered.Count; i++)
+            List<StandingsEntry> ordered;
+            if (isRaceSession)
             {
-                if (ordered[i].ClassPosition == 99)
+                ordered = g
+                    .OrderBy(d => d.ClassPosition)
+                    .ThenBy(d => d.OverallPosition)
+                    .ToList();
+
+                for (int i = 0; i < ordered.Count; i++)
+                {
+                    if (ordered[i].ClassPosition == 99)
+                        ordered[i].ClassPosition = i + 1;
+                }
+            }
+            else
+            {
+                // Practice / Qualifying / Warmup: sort cleanly by fastest lap (valid laps first)
+                ordered = g
+                    .OrderBy(d => d.BestLapSeconds > 10f ? 0 : 1)
+                    .ThenBy(d => d.BestLapSeconds > 10f ? d.BestLapSeconds : float.MaxValue)
+                    .ThenBy(d => d.ClassPosition)
+                    .ToList();
+
+                for (int i = 0; i < ordered.Count; i++)
                     ordered[i].ClassPosition = i + 1;
             }
 
@@ -450,6 +484,7 @@ public sealed class IRacingSdkReader : IDisposable
 
             int leaderCompleted = ordered.Count > 0 ? _carLapCompleted[ordered[0].CarIdx] : 0;
             float leaderF2 = ordered.Count > 0 ? ordered[0].GapToLeaderSeconds : 0f;
+            float leaderBest = ordered.Count > 0 ? ordered[0].BestLapSeconds : 0f;
 
             // Find fastest lap in class (purple)
             float bestClassLap = float.MaxValue;
@@ -473,12 +508,29 @@ public sealed class IRacingSdkReader : IDisposable
                     ordered[i].IntervalSeconds = 0f;
                     ordered[i].LapsDown = 0;
                 }
-                else
+                else if (isRaceSession)
                 {
                     int lapDiff = leaderCompleted - _carLapCompleted[ordered[i].CarIdx];
                     ordered[i].LapsDown = Math.Max(0, lapDiff);
                     ordered[i].GapToLeaderSeconds = Math.Max(0f, ordered[i].GapToLeaderSeconds - leaderF2);
                     ordered[i].IntervalSeconds = Math.Max(0f, ordered[i].GapToLeaderSeconds - ordered[i - 1].GapToLeaderSeconds);
+                }
+                else
+                {
+                    ordered[i].LapsDown = 0;
+                    if (ordered[i].BestLapSeconds > 10f && leaderBest > 10f)
+                    {
+                        ordered[i].GapToLeaderSeconds = Math.Max(0f, ordered[i].BestLapSeconds - leaderBest);
+                        float prevBest = ordered[i - 1].BestLapSeconds;
+                        ordered[i].IntervalSeconds = prevBest > 10f
+                            ? Math.Max(0f, ordered[i].BestLapSeconds - prevBest)
+                            : ordered[i].GapToLeaderSeconds;
+                    }
+                    else
+                    {
+                        ordered[i].GapToLeaderSeconds = 0f;
+                        ordered[i].IntervalSeconds = 0f;
+                    }
                 }
             }
 

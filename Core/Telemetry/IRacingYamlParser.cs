@@ -24,6 +24,16 @@ public sealed class YamlDriverMeta
     public string LicColorHex { get; set; } = "#EF4444";
 }
 
+public sealed class YamlSessionResult
+{
+    public int CarIdx { get; set; } = -1;
+    public int Position { get; set; }
+    public int ClassPosition { get; set; } // 0-based in iRacing YAML
+    public float FastestTime { get; set; }
+    public float LastTime { get; set; }
+    public int LapsComplete { get; set; }
+}
+
 public sealed class YamlSessionMeta
 {
     public string TrackDisplayName { get; set; } = "iRacing";
@@ -36,6 +46,7 @@ public sealed class YamlSessionMeta
     public float DriverCarSLBlinkRpm { get; set; } = 8200f;
     public float DriverCarEstLapTime { get; set; } = 100f;
     public Dictionary<int, string> SessionTypesByNum { get; } = new();
+    public Dictionary<int, Dictionary<int, YamlSessionResult>> SessionResultsByNum { get; } = new();
     public Dictionary<int, YamlDriverMeta> DriversByIdx { get; } = new();
 }
 
@@ -52,7 +63,9 @@ public static class IRacingYamlParser
         string section = "";
         bool inDriversList = false;
         bool inSessionsList = false;
+        bool inResultsPositions = false;
         YamlDriverMeta? currentDriver = null;
+        YamlSessionResult? currentResult = null;
         int currentSessionNum = -1;
 
         var lines = yaml.Split('\n');
@@ -68,9 +81,11 @@ public static class IRacingYamlParser
             if (indent == 0 && trimmed.EndsWith(':'))
             {
                 FlushDriver(meta, ref currentDriver);
+                FlushResult(meta, currentSessionNum, ref currentResult);
                 section = trimmed.TrimEnd(':');
                 inDriversList = false;
                 inSessionsList = false;
+                inResultsPositions = false;
                 continue;
             }
 
@@ -99,12 +114,74 @@ public static class IRacingYamlParser
                 if (trimmed == "Sessions:")
                 {
                     inSessionsList = true;
+                    inResultsPositions = false;
                     continue;
                 }
                 if (!inSessionsList) continue;
 
-                bool isItemStart = trimmed.StartsWith("- ");
-                string kvLine = isItemStart ? trimmed.Substring(2).Trim() : trimmed;
+                // New session entry at indent <= 2 (" - SessionNum: 0")
+                if (indent <= 2 && trimmed.StartsWith("- "))
+                {
+                    FlushResult(meta, currentSessionNum, ref currentResult);
+                    inResultsPositions = false;
+                    string sKv = trimmed.Substring(2).Trim();
+                    if (TrySplitKv(sKv, out string sk, out string sv) && sk == "SessionNum" && int.TryParse(sv, out int sNum))
+                        currentSessionNum = sNum;
+                    continue;
+                }
+
+                if (trimmed == "ResultsPositions:")
+                {
+                    inResultsPositions = true;
+                    continue;
+                }
+
+                if (inResultsPositions)
+                {
+                    // Exited ResultsPositions list back to session-level key (indent <= 4 and not "- ")
+                    if (indent <= 4 && !trimmed.StartsWith("- "))
+                    {
+                        FlushResult(meta, currentSessionNum, ref currentResult);
+                        inResultsPositions = false;
+                    }
+                    else
+                    {
+                        bool isNewRes = trimmed.StartsWith("- ");
+                        string rLine = isNewRes ? trimmed.Substring(2).Trim() : trimmed;
+                        if (isNewRes)
+                        {
+                            FlushResult(meta, currentSessionNum, ref currentResult);
+                            currentResult = new YamlSessionResult();
+                        }
+                        if (currentResult != null && TrySplitKv(rLine, out string rk, out string rv))
+                        {
+                            switch (rk)
+                            {
+                                case "Position":
+                                    if (int.TryParse(rv, out int rPos)) currentResult.Position = rPos;
+                                    break;
+                                case "ClassPosition":
+                                    if (int.TryParse(rv, out int rCPos)) currentResult.ClassPosition = rCPos;
+                                    break;
+                                case "CarIdx":
+                                    if (int.TryParse(rv, out int rIdx)) currentResult.CarIdx = rIdx;
+                                    break;
+                                case "FastestTime":
+                                    if (TryParseFloat(rv, out float ft) && ft > 0f) currentResult.FastestTime = ft;
+                                    break;
+                                case "LastTime":
+                                    if (TryParseFloat(rv, out float lt) && lt > 0f) currentResult.LastTime = lt;
+                                    break;
+                                case "LapsComplete":
+                                    if (int.TryParse(rv, out int lc) && lc >= 0) currentResult.LapsComplete = lc;
+                                    break;
+                            }
+                        }
+                        continue;
+                    }
+                }
+
+                string kvLine = trimmed.StartsWith("- ") ? trimmed.Substring(2).Trim() : trimmed;
                 if (TrySplitKv(kvLine, out string k, out string v))
                 {
                     if (k == "SessionNum" && int.TryParse(v, out int sNum))
@@ -217,7 +294,22 @@ public static class IRacingYamlParser
         }
 
         FlushDriver(meta, ref currentDriver);
+        FlushResult(meta, currentSessionNum, ref currentResult);
         return meta;
+    }
+
+    private static void FlushResult(YamlSessionMeta meta, int sessionNum, ref YamlSessionResult? res)
+    {
+        if (res != null && sessionNum >= 0 && res.CarIdx >= 0)
+        {
+            if (!meta.SessionResultsByNum.TryGetValue(sessionNum, out var dict))
+            {
+                dict = new Dictionary<int, YamlSessionResult>();
+                meta.SessionResultsByNum[sessionNum] = dict;
+            }
+            dict[res.CarIdx] = res;
+        }
+        res = null;
     }
 
     private static void FlushDriver(YamlSessionMeta meta, ref YamlDriverMeta? driver)

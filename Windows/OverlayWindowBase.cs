@@ -86,7 +86,7 @@ public abstract class OverlayWindowBase : Window
     protected bool IsIRacingNative =>
         string.Equals(Settings.UiSkin, "IRacingNative", StringComparison.OrdinalIgnoreCase);
 
-    protected DropShadowEffect GetActiveShadow() => IsIRacingNative ? NativeTextShadow : HudTextShadow;
+    protected Effect? GetActiveShadow() => IsIRacingNative ? null : HudTextShadow;
     protected CornerRadius GetCardRadius() => new(IsIRacingNative ? 6 : 4);
 
     public event Action? LayoutChangedByUser;
@@ -609,9 +609,9 @@ public abstract class OverlayWindowBase : Window
 
     protected SolidColorBrush MakeBackdropBrush(double multiplier = 1.0, byte? r = null, byte? g = null, byte? b = null)
     {
-        byte cr = r ?? (byte)(IsIRacingNative ? 0x1A : 0x0B);
-        byte cg = g ?? (byte)(IsIRacingNative ? 0x1D : 0x0E);
-        byte cb = b ?? (byte)(IsIRacingNative ? 0x24 : 0x14);
+        byte cr = r ?? (byte)(IsIRacingNative ? 0x1E : 0x0B);
+        byte cg = g ?? (byte)(IsIRacingNative ? 0x20 : 0x0E);
+        byte cb = b ?? (byte)(IsIRacingNative ? 0x26 : 0x14);
         double alpha = Math.Clamp(Settings.BackgroundOpacity * multiplier, 0.0, 0.96);
         var brush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(alpha * 255.0), cr, cg, cb));
         brush.Freeze();
@@ -620,9 +620,13 @@ public abstract class OverlayWindowBase : Window
 
     protected SolidColorBrush MakeBorderBrush()
     {
-        double alpha = IsIRacingNative
-            ? Math.Clamp(Settings.BackgroundOpacity * 0.20, 0.05, 0.18)
-            : Math.Clamp(Settings.BackgroundOpacity * 0.34, 0.06, 0.28);
+        if (IsIRacingNative)
+        {
+            var b = new SolidColorBrush(Color.FromArgb(0xB8, 0x33, 0x37, 0x42));
+            b.Freeze();
+            return b;
+        }
+        double alpha = Math.Clamp(Settings.BackgroundOpacity * 0.34, 0.06, 0.28);
         var brush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(alpha * 255.0), 0xFF, 0xFF, 0xFF));
         brush.Freeze();
         return brush;

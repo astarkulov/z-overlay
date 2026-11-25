@@ -31,14 +31,14 @@ public sealed class StandingsWindow : OverlayWindowBase
     private FontFamily _monoFont = new("Cascadia Mono, Consolas");
 
     private static readonly SolidColorBrush BgPlayerCarbon = FormatHelpers.GetFrozenBrush("#4D2563EB");
-    private static readonly SolidColorBrush BgPlayerNative = FormatHelpers.GetFrozenBrush("#2CF2B830");
+    private static readonly SolidColorBrush BgPlayerNative = FormatHelpers.GetFrozenBrush("#22F2B830");
     private static readonly SolidColorBrush BgRowAltCarbon = FormatHelpers.GetFrozenBrush("#12FFFFFF");
-    private static readonly SolidColorBrush BgRowAltNative = FormatHelpers.GetFrozenBrush("#07FFFFFF");
+    private static readonly SolidColorBrush NativeRowDivider = FormatHelpers.GetFrozenBrush("#FF2C303A");
     private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#22FFFFFF");
-    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
-    private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#E6EDF7");
-    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#CBD5E1");
-    private static readonly SolidColorBrush NativeMuted = FormatHelpers.GetFrozenBrush("#9CA3AF");
+    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#F3F4F6");
+    private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#DCE2EC");
+    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#9CA3AF");
+    private static readonly SolidColorBrush NativeMuted = FormatHelpers.GetFrozenBrush("#8E95A3");
     private static readonly SolidColorBrush DarkText = FormatHelpers.GetFrozenBrush("#111318");
     private static readonly SolidColorBrush IRacingGold = FormatHelpers.GetFrozenBrush("#F2B830");
     private static readonly SolidColorBrush IRacingGoldBright = FormatHelpers.GetFrozenBrush("#F5C84C");
@@ -49,6 +49,7 @@ public sealed class StandingsWindow : OverlayWindowBase
     private static readonly SolidColorBrush PurpleBest = FormatHelpers.GetFrozenBrush("#E879F9");
 
     private int _renderTick;
+    private bool _lastIsRaceSession = true;
 
     public StandingsWindow(AppSettings settings) : base("Standings", settings)
     {
@@ -204,13 +205,13 @@ public sealed class StandingsWindow : OverlayWindowBase
         if (Settings.ShowStandingsIRating) AddIconColHeader(_legendGrid, 7, HudIconKind.RatingBar, "iR", HorizontalAlignment.Right);
         if (Settings.ShowStandingsDeltaIR) AddColHeader(_legendGrid, 8, "±iR", HorizontalAlignment.Right);
         AddIconColHeader(_legendGrid, 9, HudIconKind.Stopwatch, Settings.ShowStandingsInterval ? "INT" : "GAP", HorizontalAlignment.Right);
-        if (Settings.ShowStandingsLastLap) AddColHeader(_legendGrid, 10, "LAST", HorizontalAlignment.Right);
+        if (Settings.ShowStandingsLastLap) AddColHeader(_legendGrid, 10, _lastIsRaceSession ? "LAST" : "BEST", HorizontalAlignment.Right);
         if (Settings.ShowStandingsPits) AddIconColHeader(_legendGrid, 11, HudIconKind.Wrench, "PIT", HorizontalAlignment.Center);
     }
 
     private void ConfigureRowColumns(Grid g)
     {
-        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3) });
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "StdClassNode" });
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "StdPos" });
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "StdDelta" });
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "StdNum" });
@@ -272,6 +273,12 @@ public sealed class StandingsWindow : OverlayWindowBase
         _renderTick++;
         if (_renderTick % 4 != 1 && _bodyPanel.Children.Count > 0) return;
 
+        if (snap.Session.IsRaceSession != _lastIsRaceSession)
+        {
+            _lastIsRaceSession = snap.Session.IsRaceSession;
+            RebuildLegend();
+        }
+
         _trackText.Text = snap.Session.TrackName;
         _sessionTypeText.Text = snap.Session.SessionType;
         _lapsText.Text = snap.Session.TotalLaps > 0
@@ -305,7 +312,7 @@ public sealed class StandingsWindow : OverlayWindowBase
                 : Math.Min(3, group.Drivers.Count);
 
             for (int i = 0; i < maxForClass; i++)
-                _bodyPanel.Children.Add(BuildDriverRow(group.Drivers[i], i % 2 == 1));
+                _bodyPanel.Children.Add(BuildDriverRow(group.Drivers[i], i % 2 == 1, snap.Session.IsRaceSession));
         }
     }
 
@@ -379,52 +386,55 @@ public sealed class StandingsWindow : OverlayWindowBase
         };
     }
 
-    private UIElement BuildDriverRow(StandingsEntry d, bool alt)
+    private UIElement BuildDriverRow(StandingsEntry d, bool alt, bool isRaceSession)
     {
         bool native = IsIRacingNative;
-        double rowH = Math.Round(25 * Math.Max(1.0, Settings.HudFontScale * 0.95));
+        double rowH = Math.Round((native ? 28 : 25) * Math.Max(1.0, Settings.HudFontScale * 0.95));
         var g = new Grid { Height = rowH };
         ConfigureRowColumns(g);
 
-        var accent = new Border { Background = FormatHelpers.GetFrozenBrush(d.ClassColorHex), Margin = new Thickness(0, 2, 0, 2), CornerRadius = new CornerRadius(1) };
-        Grid.SetColumn(accent, 0);
-        g.Children.Add(accent);
-
-        // Position: solid gold pill with dark text for player in iRacing Native, gold numbers for others!
-        if (native && d.IsPlayer)
+        // Class indicator: in iRacing Native, exact vertical line + node dot (just like iRacing's Results table!)
+        var classBrush = FormatHelpers.GetFrozenBrush(d.ClassColorHex);
+        if (native)
         {
-            var posPill = new Border
+            var nodeGrid = new Grid { Width = 14, Margin = new Thickness(4, 0, 2, 0) };
+            nodeGrid.Children.Add(new Border
             {
-                Background = IRacingGold,
-                CornerRadius = new CornerRadius(3),
-                MinWidth = 24,
-                Padding = new Thickness(4, 0, 4, 0),
-                Margin = new Thickness(4, 3, 4, 3),
-                Child = new TextBlock
-                {
-                    Text = d.ClassPosition.ToString(),
-                    FontFamily = _monoFont,
-                    FontSize = FontSz(13),
-                    FontWeight = FontWeights.Bold,
-                    Foreground = DarkText,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                }
-            };
-            Grid.SetColumn(posPill, 1);
-            g.Children.Add(posPill);
+                Width = 2,
+                Background = classBrush,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                Opacity = 0.72
+            });
+            nodeGrid.Children.Add(new System.Windows.Shapes.Ellipse
+            {
+                Width = 7,
+                Height = 7,
+                Fill = classBrush,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            Grid.SetColumn(nodeGrid, 0);
+            g.Children.Add(nodeGrid);
         }
         else
         {
-            AddCell(g, 1, d.ClassPosition.ToString(), _monoFont, FontSz(13.5),
-                native ? IRacingGold : (d.IsPlayer ? AccentSky : TextWhite), FontWeights.Bold, HorizontalAlignment.Right, minW: 22);
+            var accent = new Border { Background = classBrush, Margin = new Thickness(0, 2, 0, 2), CornerRadius = new CornerRadius(1) };
+            Grid.SetColumn(accent, 0);
+            g.Children.Add(accent);
         }
+
+        // Position: clean "P1", "P19" in iRacing Native (gold for player), crisp number in Carbon
+        string posStr = native ? $"P{d.ClassPosition}" : d.ClassPosition.ToString();
+        AddCell(g, 1, posStr, _monoFont, FontSz(13),
+            d.IsPlayer ? (native ? IRacingGoldBright : AccentSky) : (native ? TextSoft : TextWhite),
+            d.IsPlayer || !native ? FontWeights.Bold : FontWeights.Normal, HorizontalAlignment.Right, minW: 26);
 
         if (Settings.ShowStandingsPosDelta)
         {
             string pd = d.PosDelta > 0 ? $"▲{d.PosDelta}" : d.PosDelta < 0 ? $"▼{Math.Abs(d.PosDelta)}" : "–";
-            Brush pdBrush = d.PosDelta > 0 ? GainGreen : d.PosDelta < 0 ? LossRed : TextMuted;
-            AddCell(g, 2, pd, _monoFont, FontSz(10.5), pdBrush, FontWeights.Bold, HorizontalAlignment.Center);
+            Brush pdBrush = d.PosDelta > 0 ? GainGreen : d.PosDelta < 0 ? LossRed : NativeMuted;
+            AddCell(g, 2, pd, _monoFont, FontSz(10.5), pdBrush, FontWeights.SemiBold, HorizontalAlignment.Center);
         }
 
         if (Settings.ShowStandingsCarNumber)
@@ -433,16 +443,16 @@ public sealed class StandingsWindow : OverlayWindowBase
             {
                 Background = native ? Brushes.Transparent : FormatHelpers.GetFrozenBrush("#24FFFFFF"),
                 CornerRadius = new CornerRadius(2),
-                MinWidth = 26,
+                MinWidth = 30,
                 Padding = native ? new Thickness(2, 0, 2, 0) : new Thickness(4, 0, 4, 0),
                 Margin = new Thickness(1, 3, 4, 3),
                 Child = new TextBlock
                 {
                     Text = string.IsNullOrEmpty(d.CarNumber) ? "--" : (native ? $"#{d.CarNumber}" : d.CarNumber),
                     FontFamily = _monoFont,
-                    FontSize = FontSz(11.5),
+                    FontSize = FontSz(12),
                     FontWeight = native ? FontWeights.SemiBold : FontWeights.Bold,
-                    Foreground = d.IsPlayer && native ? IRacingGoldBright : (native ? NativeMuted : TextSoft),
+                    Foreground = native ? IRacingGold : TextSoft,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 }
@@ -453,7 +463,7 @@ public sealed class StandingsWindow : OverlayWindowBase
 
         if (Settings.ShowCarBrandIcons)
         {
-            var icon = new CarBrandIcon { Brand = d.Brand, Margin = new Thickness(0, 0, 5, 0) };
+            var icon = new CarBrandIcon { Brand = d.Brand, Margin = new Thickness(0, 0, 6, 0) };
             Grid.SetColumn(icon, 4);
             g.Children.Add(icon);
         }
@@ -463,14 +473,14 @@ public sealed class StandingsWindow : OverlayWindowBase
             Text = d.DriverName,
             FontFamily = _uiFont,
             FontSize = FontSz(13.5),
-            FontWeight = d.IsPlayer ? FontWeights.Bold : FontWeights.SemiBold,
+            FontWeight = d.IsPlayer ? FontWeights.SemiBold : (native ? FontWeights.Normal : FontWeights.SemiBold),
             Foreground = d.IsPlayer
                 ? (native ? IRacingGoldBright : TextWhite)
-                : (d.IsOnPitRoad ? TextMuted : TextWhite),
+                : (d.IsOnPitRoad ? NativeMuted : TextWhite),
             VerticalAlignment = VerticalAlignment.Center,
             MaxWidth = 230,
             TextTrimming = TextTrimming.CharacterEllipsis,
-            Margin = new Thickness(1, 0, 8, 0)
+            Margin = new Thickness(1, 0, 10, 0)
         };
         Grid.SetColumn(nameTb, 5);
         g.Children.Add(nameTb);
@@ -518,10 +528,14 @@ public sealed class StandingsWindow : OverlayWindowBase
 
         float gapVal = Settings.ShowStandingsInterval ? d.IntervalSeconds : d.GapToLeaderSeconds;
         string gapStr = d.ClassPosition == 1
-            ? "LDR"
-            : d.LapsDown > 0 && !Settings.ShowStandingsInterval
-                ? $"+{d.LapsDown}L"
-                : FormatHelpers.FormatGap(gapVal);
+            ? (isRaceSession ? "LDR" : "P1")
+            : !isRaceSession && d.BestLapSeconds <= 10f
+                ? "--"
+                : !isRaceSession
+                    ? FormatHelpers.FormatQualiGap(gapVal)
+                    : d.LapsDown > 0 && !Settings.ShowStandingsInterval
+                        ? $"+{d.LapsDown}L"
+                        : FormatHelpers.FormatGap(gapVal);
         AddCell(g, 9, gapStr, _monoFont, FontSz(13.5),
             d.IsPlayer && native ? IRacingGoldBright : (d.ClassPosition == 1 ? (native ? IRacingGold : AccentSky) : TextWhite),
             FontWeights.Bold, HorizontalAlignment.Right, minW: 42);
@@ -538,9 +552,10 @@ public sealed class StandingsWindow : OverlayWindowBase
             if (d.IsClassBestLap)
                 lapPanel.Children.Add(new HudMetricIcon(HudIconKind.FastestBolt, "#E879F9", 10.5) { Margin = new Thickness(0, 0, 2, 0) });
 
+            float shownLap = isRaceSession ? d.LastLapSeconds : d.BestLapSeconds;
             lapPanel.Children.Add(new TextBlock
             {
-                Text = FormatHelpers.FormatLapTime(d.LastLapSeconds),
+                Text = FormatHelpers.FormatLapTime(shownLap),
                 FontFamily = _monoFont,
                 FontSize = FontSz(12.5),
                 Foreground = d.IsClassBestLap ? PurpleBest : TextSoft,
@@ -578,7 +593,9 @@ public sealed class StandingsWindow : OverlayWindowBase
         {
             Background = d.IsPlayer
                 ? (native ? BgPlayerNative : BgPlayerCarbon)
-                : (alt ? (native ? BgRowAltNative : BgRowAltCarbon) : Brushes.Transparent),
+                : (native ? Brushes.Transparent : (alt ? BgRowAltCarbon : Brushes.Transparent)),
+            BorderBrush = native ? NativeRowDivider : Brushes.Transparent,
+            BorderThickness = new Thickness(0, 0, 0, native ? 1 : 0),
             Child = g
         };
     }

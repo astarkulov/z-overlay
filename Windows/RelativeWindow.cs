@@ -34,9 +34,9 @@ public sealed class RelativeWindow : OverlayWindowBase
     private readonly List<RowVisual> _rows = new(MaxRowPool);
 
     private static readonly SolidColorBrush BgPlayerCarbon = FormatHelpers.GetFrozenBrush("#4D2563EB");
-    private static readonly SolidColorBrush BgPlayerNative = FormatHelpers.GetFrozenBrush("#2CF2B830");
+    private static readonly SolidColorBrush BgPlayerNative = FormatHelpers.GetFrozenBrush("#22F2B830");
     private static readonly SolidColorBrush BgRowAltCarbon = FormatHelpers.GetFrozenBrush("#12FFFFFF");
-    private static readonly SolidColorBrush BgRowAltNative = FormatHelpers.GetFrozenBrush("#07FFFFFF");
+    private static readonly SolidColorBrush NativeRowDivider = FormatHelpers.GetFrozenBrush("#FF2C303A");
     private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#22FFFFFF");
     private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
     private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#E6EDF7");
@@ -461,16 +461,17 @@ public sealed class RelativeWindow : OverlayWindowBase
 
             rv.Container.Background = e.IsPlayer
                 ? (native ? BgPlayerNative : BgPlayerCarbon)
-                : (i % 2 == 1 ? (native ? BgRowAltNative : BgRowAltCarbon) : Brushes.Transparent);
+                : (native ? Brushes.Transparent : (i % 2 == 1 ? BgRowAltCarbon : Brushes.Transparent));
+            rv.Container.BorderBrush = native ? NativeRowDivider : Brushes.Transparent;
+            rv.Container.BorderThickness = new Thickness(0, 0, 0, native ? 1 : 0);
 
             rv.ClassBar.Background = FormatHelpers.GetFrozenBrush(e.ClassColorHex);
             rv.Pos.Text = e.ClassPosition > 0 ? e.ClassPosition.ToString() : "-";
             rv.CarNum.Text = string.IsNullOrEmpty(e.CarNumber) ? "--" : (native ? $"#{e.CarNumber}" : e.CarNumber);
-            rv.CarNum.Foreground = e.IsPlayer && native ? IRacingGoldBright : (native ? NativeCarNumMuted : TextSoft);
+            rv.CarNum.Foreground = native ? IRacingGold : TextSoft;
             rv.BrandIcon.Brand = e.Brand;
             rv.Name.Text = e.DriverName;
 
-            // iRacing Native position badge: solid gold pill with dark text for player, gold numbers for others!
             if (native && e.IsPlayer)
             {
                 rv.PosPill.Background = IRacingGold;
@@ -479,7 +480,7 @@ public sealed class RelativeWindow : OverlayWindowBase
             else
             {
                 rv.PosPill.Background = Brushes.Transparent;
-                rv.Pos.Foreground = native ? IRacingGold : (e.IsPlayer ? PlayerAccentCarbon : TextSoft);
+                rv.Pos.Foreground = native ? TextSoft : (e.IsPlayer ? PlayerAccentCarbon : TextSoft);
             }
 
             Brush nameColor = e.IsPlayer
@@ -492,7 +493,7 @@ public sealed class RelativeWindow : OverlayWindowBase
                 };
 
             rv.Name.Foreground = e.IsOnPitRoad && !e.IsPlayer ? TextMuted : nameColor;
-            rv.Name.FontWeight = e.IsPlayer ? FontWeights.Bold : FontWeights.SemiBold;
+            rv.Name.FontWeight = e.IsPlayer ? FontWeights.SemiBold : (native ? FontWeights.Normal : FontWeights.SemiBold);
 
             if (e.IsOnPitRoad)
             {

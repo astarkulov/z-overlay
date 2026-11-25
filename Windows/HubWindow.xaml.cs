@@ -663,7 +663,7 @@ public partial class HubWindow : Window
     {
         _settings.UiSkin = "IRacingNative";
         _settings.ThemePreset = "IRacingNative";
-        _settings.BackgroundOpacity = 0.82;
+        _settings.BackgroundOpacity = 0.90;
         SyncUiFromSettings();
         _onSettingsChanged();
     }
