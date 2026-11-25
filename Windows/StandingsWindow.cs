@@ -60,6 +60,10 @@ public sealed class StandingsWindow : OverlayWindowBase
     private static readonly SolidColorBrush GainGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
     private static readonly SolidColorBrush LossRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
     private static readonly SolidColorBrush PitAmber = FormatHelpers.GetFrozenBrush("#FCD34D");
+    private static readonly SolidColorBrush PitBadgeBg = FormatHelpers.GetFrozenBrush("#FFF2B830");
+    private static readonly SolidColorBrush PitBadgeText = FormatHelpers.GetFrozenBrush("#FF111318");
+    private static readonly SolidColorBrush StintPittedBg = FormatHelpers.GetFrozenBrush("#28FFFFFF");
+    private static readonly SolidColorBrush StintCleanText = FormatHelpers.GetFrozenBrush("#FFD6DFEC");
     private static readonly SolidColorBrush PurpleBest = FormatHelpers.GetFrozenBrush("#E879F9");
     private static readonly SolidColorBrush CarNumBgCarbon = FormatHelpers.GetFrozenBrush("#24FFFFFF");
 
@@ -120,6 +124,7 @@ public sealed class StandingsWindow : OverlayWindowBase
         public StackPanel LapPanel = null!;
         public HudMetricIcon FastestBolt = null!;
         public TextBlock LapText = null!;
+        public Border PitBadge = null!;
         public StackPanel PitPanel = null!;
         public HudMetricIcon PitWrench = null!;
         public TextBlock PitText = null!;
@@ -839,29 +844,37 @@ public sealed class StandingsWindow : OverlayWindowBase
         Grid.SetColumn(rv.LapPanel, 10);
         g.Children.Add(rv.LapPanel);
 
-        // Col 11: Pit / Stint
+        // Col 11: High-contrast Pit / Stint badge
         rv.PitPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(1, 0, 4, 0)
+            VerticalAlignment = VerticalAlignment.Center
         };
-        rv.PitWrench = new HudMetricIcon(HudIconKind.Wrench, "#FCD34D", 9)
+        rv.PitWrench = new HudMetricIcon(HudIconKind.Wrench, "#111318", 9)
         {
-            Margin = new Thickness(0, 0, 1.5, 0),
+            Margin = new Thickness(0, 0, 2, 0),
             Visibility = Visibility.Collapsed
         };
         rv.PitText = new TextBlock
         {
             FontFamily = _monoFont,
-            FontSize = FontSz(10),
+            FontSize = FontSz(10.5),
             VerticalAlignment = VerticalAlignment.Center
         };
         rv.PitPanel.Children.Add(rv.PitWrench);
         rv.PitPanel.Children.Add(rv.PitText);
-        Grid.SetColumn(rv.PitPanel, 11);
-        g.Children.Add(rv.PitPanel);
+        rv.PitBadge = new Border
+        {
+            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(3, 0, 3, 0),
+            Margin = new Thickness(1, 2, 4, 2),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = rv.PitPanel
+        };
+        Grid.SetColumn(rv.PitBadge, 11);
+        g.Children.Add(rv.PitBadge);
 
         rv.Container = new Border
         {
@@ -954,22 +967,46 @@ public sealed class StandingsWindow : OverlayWindowBase
             rv.LapText.FontWeight = d.IsClassBestLap ? FontWeights.Bold : FontWeights.SemiBold;
         }
 
-        rv.PitPanel.Visibility = Settings.ShowStandingsPits ? Visibility.Visible : Visibility.Collapsed;
+        rv.PitBadge.Visibility = Settings.ShowStandingsPits ? Visibility.Visible : Visibility.Collapsed;
         if (Settings.ShowStandingsPits)
         {
             if (d.IsOnPitRoad)
             {
+                rv.PitBadge.Background = PitBadgeBg;
+                rv.PitBadge.Padding = new Thickness(3, 0, 3, 0);
                 rv.PitWrench.Visibility = Visibility.Visible;
                 rv.PitText.Text = "PIT";
                 rv.PitText.FontSize = FontSz(9.5);
+                rv.PitText.FontWeight = FontWeights.ExtraBold;
+                rv.PitText.Foreground = PitBadgeText;
+            }
+            else if (d.PitStops > 0)
+            {
+                rv.PitBadge.Background = StintPittedBg;
+                rv.PitBadge.Padding = new Thickness(3, 0, 3, 0);
+                rv.PitWrench.Visibility = Visibility.Collapsed;
+                rv.PitText.Text = $"P{d.PitStops}·{d.StintLaps}";
+                rv.PitText.FontSize = FontSz(10.5);
                 rv.PitText.FontWeight = FontWeights.Bold;
-                rv.PitText.Foreground = PitAmber;
+                rv.PitText.Foreground = TextWhite;
+            }
+            else if (d.StintLaps > 0)
+            {
+                rv.PitBadge.Background = Brushes.Transparent;
+                rv.PitBadge.Padding = new Thickness(2, 0, 2, 0);
+                rv.PitWrench.Visibility = Visibility.Collapsed;
+                rv.PitText.Text = $"L{d.StintLaps}";
+                rv.PitText.FontSize = FontSz(10.5);
+                rv.PitText.FontWeight = FontWeights.SemiBold;
+                rv.PitText.Foreground = StintCleanText;
             }
             else
             {
+                rv.PitBadge.Background = Brushes.Transparent;
+                rv.PitBadge.Padding = new Thickness(2, 0, 2, 0);
                 rv.PitWrench.Visibility = Visibility.Collapsed;
-                rv.PitText.Text = d.PitStops > 0 ? $"P{d.PitStops}·{d.StintLaps}" : (d.StintLaps > 0 ? $"L{d.StintLaps}" : "-");
-                rv.PitText.FontSize = FontSz(10);
+                rv.PitText.Text = "-";
+                rv.PitText.FontSize = FontSz(10.5);
                 rv.PitText.FontWeight = FontWeights.SemiBold;
                 rv.PitText.Foreground = TextMuted;
             }

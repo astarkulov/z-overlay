@@ -50,9 +50,9 @@ public sealed class RelativeWindow : OverlayWindowBase
     private static readonly SolidColorBrush PlayerAccentCarbon = FormatHelpers.GetFrozenBrush("#93C5FD");
     private static readonly SolidColorBrush FasterRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
     private static readonly SolidColorBrush SlowerGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
-    private static readonly SolidColorBrush PitTagBg = FormatHelpers.GetFrozenBrush("#55F59E0B");
-    private static readonly SolidColorBrush OutTagBg = FormatHelpers.GetFrozenBrush("#5538BDF8");
-    private static readonly SolidColorBrush OffTagBg = FormatHelpers.GetFrozenBrush("#55EF4444");
+    private static readonly SolidColorBrush PitTagBg = FormatHelpers.GetFrozenBrush("#FFF2B830");
+    private static readonly SolidColorBrush OutTagBg = FormatHelpers.GetFrozenBrush("#FF0284C7");
+    private static readonly SolidColorBrush OffTagBg = FormatHelpers.GetFrozenBrush("#FFDC2626");
     private static readonly SolidColorBrush AmberText = FormatHelpers.GetFrozenBrush("#FCD34D");
     private static readonly SolidColorBrush CarNumBoxBg = FormatHelpers.GetFrozenBrush("#24FFFFFF");
 
@@ -498,27 +498,27 @@ public sealed class RelativeWindow : OverlayWindowBase
                 rv.StatusBadge.Visibility = Visibility.Visible;
                 rv.StatusBadge.Background = PitTagBg;
                 rv.StatusIcon.Kind = HudIconKind.Wrench;
-                rv.StatusIcon.Tint = AmberText;
+                rv.StatusIcon.Tint = DarkText;
                 rv.StatusText.Text = "PIT";
-                rv.StatusText.Foreground = AmberText;
+                rv.StatusText.Foreground = DarkText;
             }
             else if (e.IsOutLap)
             {
                 rv.StatusBadge.Visibility = Visibility.Visible;
                 rv.StatusBadge.Background = OutTagBg;
                 rv.StatusIcon.Kind = HudIconKind.OutLap;
-                rv.StatusIcon.Tint = LapDownBrush;
+                rv.StatusIcon.Tint = TextWhite;
                 rv.StatusText.Text = "OUT";
-                rv.StatusText.Foreground = LapDownBrush;
+                rv.StatusText.Foreground = TextWhite;
             }
             else if (e.IsOffTrack)
             {
                 rv.StatusBadge.Visibility = Visibility.Visible;
                 rv.StatusBadge.Background = OffTagBg;
                 rv.StatusIcon.Kind = HudIconKind.Warning;
-                rv.StatusIcon.Tint = LapAheadBrush;
+                rv.StatusIcon.Tint = TextWhite;
                 rv.StatusText.Text = "OFF";
-                rv.StatusText.Foreground = LapAheadBrush;
+                rv.StatusText.Foreground = TextWhite;
             }
             else
             {
