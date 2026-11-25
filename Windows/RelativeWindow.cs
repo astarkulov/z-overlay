@@ -317,7 +317,7 @@ public sealed class RelativeWindow : OverlayWindowBase
         {
             FontWeight = FontWeights.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
-            MaxWidth = 175,
+            MaxWidth = 230,
             TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(1, 0, 8, 0)
         };

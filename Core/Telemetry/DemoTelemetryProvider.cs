@@ -33,20 +33,20 @@ public sealed class DemoTelemetryProvider
     private readonly List<DemoCar> _cars = new()
     {
         // LMP2 Class
-        new(1, "07", CarBrand.Dallara,     "M. Verstappen", 1, "LMP2", "#38BDF8", "A 4.9", "#2563EB", 8940, 24.5f, 126.412f, false, 1, LapRelation.LapAhead),
-        new(2, "24", CarBrand.Dallara,     "K. Estre",      1, "LMP2", "#38BDF8", "A 4.6", "#2563EB", 7210, 21.8f, 126.890f, false, 1, LapRelation.LapAhead),
-        new(3, "88", CarBrand.Dallara,     "L. Vanthoor",   1, "LMP2", "#38BDF8", "A 3.9", "#2563EB", 6480, 18.2f, 127.145f, false, 1, LapRelation.LapAhead),
+        new(1, "07", CarBrand.Dallara,     "Max Verstappen",     1, "LMP2", "#38BDF8", "A 4.9", "#2563EB", 8940, 24.5f, 126.412f, false, 1, LapRelation.LapAhead),
+        new(2, "24", CarBrand.Dallara,     "Kevin Estre",        1, "LMP2", "#38BDF8", "A 4.6", "#2563EB", 7210, 21.8f, 126.890f, false, 1, LapRelation.LapAhead),
+        new(3, "88", CarBrand.Dallara,     "Laurens Vanthoor",   1, "LMP2", "#38BDF8", "A 3.9", "#2563EB", 6480, 18.2f, 127.145f, false, 1, LapRelation.LapAhead),
 
         // GT3 Class (Player's Class)
-        new(4, "12", CarBrand.McLaren,     "S. Baldwin",    2, "GT3",  "#F5A623", "A 4.8", "#2563EB", 5420,  4.8f, 136.814f, false, 1, LapRelation.SameLap),
-        new(5, "91", CarBrand.Mercedes,    "D. Morad",      2, "GT3",  "#F5A623", "A 4.2", "#2563EB", 4890,  2.1f, 137.041f, false, 1, LapRelation.SameLap),
-        new(6, "33", CarBrand.Ferrari,     "A. Lindholm",   2, "GT3",  "#F5A623", "A 3.6", "#2563EB", 4120,  0.65f,137.188f, false, 1, LapRelation.SameLap),
-        new(7, "17", CarBrand.Porsche,     "YOU (ApexHUD)", 2, "GT3",  "#F5A623", "A 3.8", "#2563EB", 3850,  0.0f, 137.224f, true,  1, LapRelation.SameLap),
-        new(8, "46", CarBrand.Bmw,         "R. Marciello",  2, "GT3",  "#F5A623", "B 3.4", "#16A34A", 4260, -0.42f,137.302f, false, 1, LapRelation.SameLap),
-        new(9, "77", CarBrand.Lamborghini, "T. Preining",   2, "GT3",  "#F5A623", "A 2.9", "#2563EB", 3490, -1.95f,137.650f, false, 1, LapRelation.SameLap),
-        new(10,"04", CarBrand.Audi,        "J. Gounon",     2, "GT3",  "#F5A623", "B 4.1", "#16A34A", 3120, -3.70f,137.982f, false, 1, LapRelation.SameLap),
-        new(11,"55", CarBrand.AstonMartin, "N. Thiim",      2, "GT3",  "#F5A623", "B 2.7", "#16A34A", 2840, -6.10f,138.410f, false, 0, LapRelation.SameLap),
-        new(12,"63", CarBrand.Chevrolet,   "M. Engel",      2, "GT3",  "#F5A623", "C 3.2", "#EAB308", 2410,-11.40f,139.115f, false, 1, LapRelation.LapDown)
+        new(4, "12", CarBrand.McLaren,     "Scott Baldwin",      2, "GT3",  "#F5A623", "A 4.8", "#2563EB", 5420,  4.8f, 136.814f, false, 1, LapRelation.SameLap),
+        new(5, "91", CarBrand.Mercedes,    "Daniel Morad",       2, "GT3",  "#F5A623", "A 4.2", "#2563EB", 4890,  2.1f, 137.041f, false, 1, LapRelation.SameLap),
+        new(6, "33", CarBrand.Ferrari,     "Axel Lindholm",      2, "GT3",  "#F5A623", "A 3.6", "#2563EB", 4120,  0.65f,137.188f, false, 1, LapRelation.SameLap),
+        new(7, "17", CarBrand.Porsche,     "Aktan Astarkulov",   2, "GT3",  "#F5A623", "A 3.8", "#2563EB", 3850,  0.0f, 137.224f, true,  1, LapRelation.SameLap),
+        new(8, "46", CarBrand.Bmw,         "Raffaele Marciello", 2, "GT3",  "#F5A623", "B 3.4", "#16A34A", 4260, -0.42f,137.302f, false, 1, LapRelation.SameLap),
+        new(9, "77", CarBrand.Lamborghini, "Thomas Preining",    2, "GT3",  "#F5A623", "A 2.9", "#2563EB", 3490, -1.95f,137.650f, false, 1, LapRelation.SameLap),
+        new(10,"04", CarBrand.Audi,        "Jules Gounon",       2, "GT3",  "#F5A623", "B 4.1", "#16A34A", 3120, -3.70f,137.982f, false, 1, LapRelation.SameLap),
+        new(11,"55", CarBrand.AstonMartin, "Nicki Thiim",        2, "GT3",  "#F5A623", "B 2.7", "#16A34A", 2840, -6.10f,138.410f, false, 0, LapRelation.SameLap),
+        new(12,"63", CarBrand.Chevrolet,   "Maro Engel",         2, "GT3",  "#F5A623", "C 3.2", "#EAB308", 2410,-11.40f,139.115f, false, 1, LapRelation.LapDown)
     };
 
     public TelemetrySnapshot Step(double dtSec, double fuelMarginLaps, string fuelCalcMode = "Avg")

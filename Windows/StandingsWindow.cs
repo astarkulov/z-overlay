@@ -403,7 +403,7 @@ public sealed class StandingsWindow : OverlayWindowBase
             FontWeight = d.IsPlayer ? FontWeights.Bold : FontWeights.SemiBold,
             Foreground = d.IsPlayer ? TextWhite : (d.IsOnPitRoad ? TextMuted : TextWhite),
             VerticalAlignment = VerticalAlignment.Center,
-            MaxWidth = 170,
+            MaxWidth = 230,
             TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(1, 0, 8, 0)
         };
