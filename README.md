@@ -56,8 +56,10 @@
 
 ## Быстрый старт
 
-1. Скачай `ApexHUD.exe` из раздела **[Releases](https://github.com/astarkulov/z-overlay/releases)** (нужен [.NET 6 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)).
-2. Запусти `ApexHUD.exe` — со старта включён **Демо-режим (60 Гц)**, чтобы сразу расставить виджеты, подобрать масштаб, прозрачность и шрифты.
+1. Скачай из раздела **[Releases](https://github.com/astarkulov/z-overlay/releases)** любой удобный вариант (нужен [.NET 6 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)):
+   - **`Z-Overlay-Setup-v1.0.0.exe`** — классический установщик Windows (Inno Setup: ярлык на рабочий стол, опция автозапуска с Windows, чистая деинсталляция);
+   - **`ApexHUD.exe`** — портативный однофайловый вариант (~355 КБ), работает без установки.
+2. Запусти приложение — со старта включён **Демо-режим (60 Гц)**, чтобы сразу расставить виджеты, подобрать масштаб, прозрачность и шрифты.
 3. Нажми **Закрепить (`Ctrl + Shift + L`)** — все виджеты станут click-through.
 4. Выключи **Демо-режим** в сайдбаре для перехода в **Live iRacing**.
 5. В настройках графики iRacing включи **Borderless Windowed** (`Full Screen = off`, `Border = off`).
@@ -77,3 +79,11 @@ dotnet publish ApexHUD.csproj -c Release -r win-x64 --self-contained false -p:Pu
 ```
 
 Готовый однофайловый бинарник появится в `dist\ApexHUD.exe`.
+
+Для сборки Windows-установщика (требуется [Inno Setup 6](https://jrsoftware.org/isinfo.php)):
+
+```powershell
+.\installer\build-installer.ps1
+```
+
+Установщик появится в `dist\Z-Overlay-Setup-v1.0.0.exe`.
