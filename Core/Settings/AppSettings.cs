@@ -1,0 +1,195 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+
+namespace ApexHUD.Core.Settings;
+
+public sealed class WidgetLayout
+{
+    public bool Enabled { get; set; } = true;
+    public double Left { get; set; }
+    public double Top { get; set; }
+    public double Scale { get; set; } = 1.0;
+    public double Opacity { get; set; } = 1.0;
+}
+
+public sealed class AppSettings
+{
+    // Core mode
+    public bool DemoMode { get; set; } = true;
+    public bool Locked { get; set; } = false;
+    public bool AutoHideOutOfSim { get; set; } = false;
+    public bool ShowOnlyWhenIRacingFocused { get; set; } = true;
+
+    // Appearance & Typography
+    public double GlobalScale { get; set; } = DefaultGlobalScale();
+    public double BackgroundOpacity { get; set; } = 0.62;
+    public string ThemePreset { get; set; } = "CarbonGlass";
+    public string UiFontFamily { get; set; } = "Segoe UI Variable Text";
+    public string MonoFontFamily { get; set; } = "Cascadia Mono";
+
+    // Units & Fuel Strategy
+    public bool UseImperialUnits { get; set; } = false;
+    public double FuelSafetyMarginLaps { get; set; } = 0.5;
+    public string FuelCalcMode { get; set; } = "Avg"; // Avg | Last | Max
+
+    // Per-widget Racelab-style functional toggles
+    public bool ShowCarBrandIcons { get; set; } = true;
+    public int RelativeCarsEachSide { get; set; } = 4;
+    public bool ShowRelativeIRating { get; set; } = true;
+    public bool ShowRelativeLicense { get; set; } = true;
+    public bool ShowRelativePaceDelta { get; set; } = true;
+
+    public int StandingsMaxRows { get; set; } = 10;
+    public bool ShowStandingsPosDelta { get; set; } = true;
+    public bool ShowStandingsTireCompound { get; set; } = true;
+    public bool ShowStandingsDeltaIR { get; set; } = true;
+    public bool ShowStandingsInterval { get; set; } = false; // false = Gap to Leader, true = Interval to car ahead
+    public bool ShowStandingsLastLap { get; set; } = true;
+    public bool ShowStandingsPits { get; set; } = true;
+
+    public bool ShowInputsShiftBar { get; set; } = true;
+    public bool ShowInputsSteering { get; set; } = true;
+    public bool ShowInputsClutch { get; set; } = true;
+    public bool ShowInputsElectronics { get; set; } = true; // BB / TC / ABS strip
+    public bool ShowInputsDeltaBar { get; set; } = true;    // Live lap delta bar
+    public bool ShowInputsCornerSpeed { get; set; } = true; // Racelab Apex Min Speed
+    public double InputsGraphSeconds { get; set; } = 3.5;   // 1.0 .. 12.0 seconds
+
+    public bool RadarAutoHideWhenClear { get; set; } = true;
+
+    // Allowed monitors by DeviceName (empty = Primary screen only)
+    public List<string> AllowedMonitorDevices { get; set; } = new();
+
+    public Dictionary<string, WidgetLayout> Widgets { get; set; } = CreateDefaultWidgets();
+
+    private static string SettingsPath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ApexHUD", "settings.json");
+
+    private static double DefaultGlobalScale()
+    {
+        double screenH = System.Windows.SystemParameters.PrimaryScreenHeight;
+        if (screenH >= 2000) return 1.45;
+        if (screenH >= 1350) return 1.20;
+        return 1.05;
+    }
+
+    public static Dictionary<string, WidgetLayout> CreateDefaultWidgets()
+    {
+        double screenW = System.Windows.SystemParameters.PrimaryScreenWidth;
+        double screenH = System.Windows.SystemParameters.PrimaryScreenHeight;
+        double gs = DefaultGlobalScale();
+
+        return new Dictionary<string, WidgetLayout>
+        {
+            ["Relative"] = new()
+            {
+                Enabled = true,
+                Left = Math.Max(24, screenW - 480 * gs - 28),
+                Top = Math.Max(24, screenH - 280 * gs - 36),
+                Scale = 1.0,
+                Opacity = 1.0
+            },
+            ["Standings"] = new()
+            {
+                Enabled = true,
+                Left = 24,
+                Top = 28,
+                Scale = 1.0,
+                Opacity = 1.0
+            },
+            ["Inputs"] = new()
+            {
+                Enabled = true,
+                Left = Math.Max(24, (screenW - 460 * gs) / 2.0),
+                Top = Math.Max(24, screenH - 155 * gs - 36),
+                Scale = 1.0,
+                Opacity = 1.0
+            },
+            ["Fuel"] = new()
+            {
+                Enabled = true,
+                Left = 24,
+                Top = Math.Max(24, screenH - 205 * gs - 36),
+                Scale = 1.0,
+                Opacity = 1.0
+            },
+            ["Radar"] = new()
+            {
+                Enabled = true,
+                Left = Math.Max(24, (screenW - 185 * gs) / 2.0),
+                Top = Math.Max(24, (screenH - 185 * gs) / 2.0 + 30),
+                Scale = 1.0,
+                Opacity = 1.0
+            }
+        };
+    }
+
+    public WidgetLayout GetWidget(string key)
+    {
+        if (!Widgets.TryGetValue(key, out var layout))
+        {
+            var defaults = CreateDefaultWidgets();
+            layout = defaults.TryGetValue(key, out var def) ? def : new WidgetLayout { Left = 60, Top = 60 };
+            Widgets[key] = layout;
+        }
+        return layout;
+    }
+
+    public static AppSettings Load()
+    {
+        try
+        {
+            if (File.Exists(SettingsPath))
+            {
+                string json = File.ReadAllText(SettingsPath);
+                var loaded = JsonSerializer.Deserialize<AppSettings>(json);
+                if (loaded != null)
+                {
+                    if (loaded.GlobalScale < 0.6) loaded.GlobalScale = DefaultGlobalScale();
+                    if (loaded.BackgroundOpacity <= 0.0 && !json.Contains("BackgroundOpacity"))
+                        loaded.BackgroundOpacity = 0.62;
+                    if (!json.Contains("ShowOnlyWhenIRacingFocused")) loaded.ShowOnlyWhenIRacingFocused = true;
+                    if (!json.Contains("ShowCarBrandIcons")) loaded.ShowCarBrandIcons = true;
+                    if (!json.Contains("ShowRelativePaceDelta")) loaded.ShowRelativePaceDelta = true;
+                    if (!json.Contains("ShowStandingsPosDelta")) loaded.ShowStandingsPosDelta = true;
+                    if (!json.Contains("ShowStandingsTireCompound")) loaded.ShowStandingsTireCompound = true;
+                    if (!json.Contains("ShowInputsElectronics")) loaded.ShowInputsElectronics = true;
+                    if (!json.Contains("ShowInputsDeltaBar")) loaded.ShowInputsDeltaBar = true;
+                    if (!json.Contains("ShowInputsCornerSpeed")) loaded.ShowInputsCornerSpeed = true;
+                    if (string.IsNullOrWhiteSpace(loaded.UiFontFamily)) loaded.UiFontFamily = "Segoe UI Variable Text";
+                    if (string.IsNullOrWhiteSpace(loaded.MonoFontFamily)) loaded.MonoFontFamily = "Cascadia Mono";
+                    if (string.IsNullOrWhiteSpace(loaded.FuelCalcMode)) loaded.FuelCalcMode = "Avg";
+                    if (loaded.StandingsMaxRows < 4) loaded.StandingsMaxRows = 10;
+                    if (loaded.RelativeCarsEachSide < 1) loaded.RelativeCarsEachSide = 4;
+                    if (loaded.InputsGraphSeconds < 1.0 || loaded.InputsGraphSeconds > 12.0) loaded.InputsGraphSeconds = 3.5;
+
+                    var defaults = CreateDefaultWidgets();
+                    foreach (var kv in defaults)
+                    {
+                        if (!loaded.Widgets.ContainsKey(kv.Key))
+                            loaded.Widgets[kv.Key] = kv.Value;
+                    }
+                    return loaded;
+                }
+            }
+        }
+        catch { }
+        return new AppSettings();
+    }
+
+    public void Save()
+    {
+        try
+        {
+            string? dir = Path.GetDirectoryName(SettingsPath);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+
+            string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(SettingsPath, json);
+        }
+        catch { }
+    }
+}

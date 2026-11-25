@@ -1,0 +1,425 @@
+<Window x:Class="ApexHUD.Windows.HubWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ApexHUD — Настройки оверлея iRacing"
+        Width="780"
+        Height="590"
+        MinWidth="700"
+        MinHeight="520"
+        WindowStyle="None"
+        ResizeMode="CanResizeWithGrip"
+        Background="#FF0E1117"
+        WindowStartupLocation="CenterScreen"
+        SnapsToDevicePixels="True">
+    <Border BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="206" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT SIDEBAR -->
+            <Border Grid.Column="0" Background="#FF0B0E14" BorderBrush="#FF1C2331" BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Brand + Live Status -->
+                    <StackPanel Grid.Row="0" Margin="16,16,16,14" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" Background="Transparent">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="8" Height="20" Background="#FF3B82F6" CornerRadius="2" Margin="0,0,9,0" />
+                            <TextBlock Text="ApexHUD" FontFamily="{StaticResource HudUiFont}" FontSize="18" FontWeight="Bold" Foreground="#FFF8FAFC" />
+                        </StackPanel>
+
+                        <Border x:Name="StatusBadge" Background="#1A3B82F6" BorderBrush="#443B82F6" BorderThickness="1" CornerRadius="4" Padding="8,5" Margin="0,12,0,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="#FF38BDF8" Margin="0,0,7,0" />
+                                <TextBlock x:Name="StatusText" Text="Demo 60 Hz" FontFamily="{StaticResource HudUiFont}" FontSize="11.5" FontWeight="SemiBold" Foreground="#FFE0F2FE" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Navigation Tabs -->
+                    <StackPanel Grid.Row="1" Margin="0,4,0,0">
+                        <RadioButton x:Name="TabWidgets" Style="{StaticResource SidebarNavButton}" Content="Виджеты" IsChecked="True" Checked="NavTab_Checked" />
+                        <RadioButton x:Name="TabPosition" Style="{StaticResource SidebarNavButton}" Content="Позиция и привязка" Checked="NavTab_Checked" />
+                        <RadioButton x:Name="TabAppearance" Style="{StaticResource SidebarNavButton}" Content="Внешний вид и масштаб" Checked="NavTab_Checked" />
+                        <RadioButton x:Name="TabHudPrefs" Style="{StaticResource SidebarNavButton}" Content="Настройки HUD" Checked="NavTab_Checked" />
+                    </StackPanel>
+
+                    <!-- Bottom Actions -->
+                    <Border Grid.Row="2" BorderBrush="#FF1C2331" BorderThickness="0,1,0,0" Padding="14,12">
+                        <StackPanel>
+                            <CheckBox x:Name="DemoModeCheck" Style="{StaticResource CleanToggle}" Click="DemoMode_Click" Margin="0,0,0,12">
+                                <TextBlock Text="Демо-режим (60 Гц)" FontSize="12" Foreground="#FFCBD5E1" />
+                            </CheckBox>
+
+                            <Button x:Name="LockButton" Style="{StaticResource ModernPrimaryButton}" Content="Закрепить (Ctrl+Shift+L)" Click="ToggleLock_Click" Margin="0,0,0,7" />
+                            <Button Style="{StaticResource ModernButton}" Content="Сбросить позиции" Click="ResetLayout_Click" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- RIGHT CONTENT AREA -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="44" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="34" />
+                </Grid.RowDefinitions>
+
+                <!-- Top Bar (Draggable + Window Controls) -->
+                <Grid Grid.Row="0" Background="#FF0E1117" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="PageTitle" Text="Виджеты оверлея" FontFamily="{StaticResource HudUiFont}" FontSize="15" FontWeight="SemiBold" Foreground="#FFF8FAFC" VerticalAlignment="Center" Margin="22,0,0,0" />
+
+                    <Button Grid.Column="1" Content="—" Width="40" Height="44" Background="Transparent" BorderThickness="0" Foreground="#FF94A3B8" Click="MinimizeToTray_Click" ToolTip="Свернуть в трей" Cursor="Hand" />
+                    <Button Grid.Column="2" Content="✕" Width="40" Height="44" Background="Transparent" BorderThickness="0" Foreground="#FF94A3B8" Click="ExitApp_Click" ToolTip="Закрыть ApexHUD" Cursor="Hand" />
+                </Grid>
+
+                <!-- PAGE 1: WIDGETS -->
+                <ScrollViewer x:Name="PageWidgets" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,4,22,16">
+                    <StackPanel>
+                        <!-- Quick Global Bar -->
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,12" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <Grid Margin="0,0,0,4">
+                                        <TextBlock Text="Общий масштаб" FontSize="12" FontWeight="SemiBold" Foreground="#FFE2E8F0" />
+                                        <TextBlock x:Name="QuickScaleVal" Text="120%" FontFamily="{StaticResource HudMonoFont}" FontSize="12" FontWeight="SemiBold" Foreground="#FF60A5FA" HorizontalAlignment="Right" />
+                                    </Grid>
+                                    <Slider x:Name="QuickScaleSlider" Style="{StaticResource CleanSlider}" Minimum="0.70" Maximum="2.20" SmallChange="0.05" LargeChange="0.15" ValueChanged="GlobalScale_ValueChanged" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <Grid Margin="0,0,0,4">
+                                        <TextBlock Text="Прозрачность фона" FontSize="12" FontWeight="SemiBold" Foreground="#FFE2E8F0" />
+                                        <TextBlock x:Name="QuickBackdropVal" Text="62%" FontFamily="{StaticResource HudMonoFont}" FontSize="12" FontWeight="SemiBold" Foreground="#FF38BDF8" HorizontalAlignment="Right" />
+                                    </Grid>
+                                    <Slider x:Name="QuickBackdropSlider" Style="{StaticResource CleanSlider}" Minimum="0.00" Maximum="0.95" SmallChange="0.05" LargeChange="0.10" ValueChanged="BackdropOpacity_ValueChanged" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="АКТИВНЫЕ ВИДЖЕТЫ (РАЗБЛОКИРУЙ ЧТОБЫ ПЕРЕТАСКИВАТЬ ПО ЭКРАНУ)" Style="{StaticResource SectionTitle}" />
+                        <StackPanel x:Name="WidgetsPanel" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- PAGE 1B: POSITION & SNAP -->
+                <ScrollViewer x:Name="PagePosition" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,4,22,16" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="РАЗРЕШЁННЫЕ МОНИТОРЫ (ВИДЖЕТЫ ДВИГАЮТСЯ ТОЛЬКО В ИХ РАМКАХ)" Style="{StaticResource SectionTitle}" />
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="12,10" Margin="0,0,0,14">
+                            <WrapPanel x:Name="MonitorsPanel" />
+                        </Border>
+
+                        <TextBlock Text="ВЫБЕРИ ВИДЖЕТ ДЛЯ ВЫРАВНИВАНИЯ (ИЛИ КЛИКНИ ПО НЕМУ НА ЭКРАНЕ)" Style="{StaticResource SectionTitle}" />
+                        <WrapPanel x:Name="WidgetSelectPanel" Margin="0,0,0,14" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.25*" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 3x3 Snap Anchor Matrix -->
+                            <Border Grid.Column="0" Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,12">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,10">
+                                        <TextBlock Text="Привязка к краям и центру" FontSize="12.5" FontWeight="SemiBold" Foreground="#FFF8FAFC" VerticalAlignment="Center" />
+                                        <CheckBox x:Name="SnapMarginCheck" Style="{StaticResource CleanToggle}" HorizontalAlignment="Right" IsChecked="True">
+                                            <TextBlock Text="Отступ 12 px" FontSize="11" Foreground="#FF94A3B8" />
+                                        </CheckBox>
+                                    </Grid>
+
+                                    <UniformGrid Rows="3" Columns="3">
+                                        <Button Style="{StaticResource ModernButton}" Content="↖ Верх-Лево" Margin="2" Padding="6,10" Tag="TopLeft" Click="SnapAnchor_Click" />
+                                        <Button Style="{StaticResource ModernButton}" Content="↑ Верх-Центр" Margin="2" Padding="6,10" Tag="TopCenter" Click="SnapAnchor_Click" />
+                                        <Button Style="{StaticResource ModernButton}" Content="↗ Верх-Право" Margin="2" Padding="6,10" Tag="TopRight" Click="SnapAnchor_Click" />
+
+                                        <Button Style="{StaticResource ModernButton}" Content="← Лево-Центр" Margin="2" Padding="6,10" Tag="MiddleLeft" Click="SnapAnchor_Click" />
+                                        <Button Style="{StaticResource ModernPrimaryButton}" Content="◎ Центр" Margin="2" Padding="6,10" Tag="Center" Click="SnapAnchor_Click" />
+                                        <Button Style="{StaticResource ModernButton}" Content="→ Право-Центр" Margin="2" Padding="6,10" Tag="MiddleRight" Click="SnapAnchor_Click" />
+
+                                        <Button Style="{StaticResource ModernButton}" Content="↙ Низ-Лево" Margin="2" Padding="6,10" Tag="BottomLeft" Click="SnapAnchor_Click" />
+                                        <Button Style="{StaticResource ModernButton}" Content="↓ Низ-Центр" Margin="2" Padding="6,10" Tag="BottomCenter" Click="SnapAnchor_Click" />
+                                        <Button Style="{StaticResource ModernButton}" Content="↘ Низ-Право" Margin="2" Padding="6,10" Tag="BottomRight" Click="SnapAnchor_Click" />
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Arrow Nudge D-Pad -->
+                            <Border Grid.Column="2" Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,12">
+                                <StackPanel>
+                                    <TextBlock Text="Точный сдвиг стрелками" FontSize="12.5" FontWeight="SemiBold" Foreground="#FFF8FAFC" Margin="0,0,0,10" />
+
+                                    <Grid HorizontalAlignment="Center" Margin="0,2,0,10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="38" />
+                                            <RowDefinition Height="38" />
+                                            <RowDefinition Height="38" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="48" />
+                                            <ColumnDefinition Width="58" />
+                                            <ColumnDefinition Width="48" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Row="0" Grid.Column="1" Style="{StaticResource ModernButton}" Content="↑" FontSize="16" Padding="0" Margin="2" Tag="0,-1" Click="NudgeArrow_Click" />
+                                        <Button Grid.Row="1" Grid.Column="0" Style="{StaticResource ModernButton}" Content="←" FontSize="16" Padding="0" Margin="2" Tag="-1,0" Click="NudgeArrow_Click" />
+                                        <Button x:Name="NudgeStepBtn" Grid.Row="1" Grid.Column="1" Style="{StaticResource ModernButton}" Content="5 px" FontSize="11" Padding="0" Margin="2" Click="ToggleNudgeStep_Click" ToolTip="Переключить шаг: 1 / 5 / 20 px" />
+                                        <Button Grid.Row="1" Grid.Column="2" Style="{StaticResource ModernButton}" Content="→" FontSize="16" Padding="0" Margin="2" Tag="1,0" Click="NudgeArrow_Click" />
+                                        <Button Grid.Row="2" Grid.Column="1" Style="{StaticResource ModernButton}" Content="↓" FontSize="16" Padding="0" Margin="2" Tag="0,1" Click="NudgeArrow_Click" />
+                                    </Grid>
+
+                                    <Border Background="#FF0E1117" BorderBrush="#FF1F2736" BorderThickness="1" CornerRadius="3" Padding="8,5">
+                                        <TextBlock x:Name="SelectedCoordsText" Text="X: 0 px   •   Y: 0 px" FontFamily="{StaticResource HudMonoFont}" FontSize="11" Foreground="#FF60A5FA" HorizontalAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Background="#143B82F6" BorderBrush="#333B82F6" BorderThickness="1" CornerRadius="4" Padding="12,9" Margin="0,14,0,0">
+                            <TextBlock Text="• Виджеты строго ограничены рамками монитора — утащить за экран невозможно.&#x0a;• При перетаскивании мышкой срабатывает магнит к краям и центру (в пределах 14 px).&#x0a;• Кликни по виджету на экране и двигай стрелками на клавиатуре (1 px, с Shift — 10 px)."
+                                       FontSize="11.5" Foreground="#FFCBD5E1" TextWrapping="Wrap" LineHeight="18" />
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- PAGE 2: APPEARANCE & SCALE -->
+                <ScrollViewer x:Name="PageAppearance" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,4,22,16" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="БЫСТРЫЕ ПРЕСЕТЫ СТИЛЯ" Style="{StaticResource SectionTitle}" />
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button x:Name="PresetGlassBtn" Grid.Column="0" Style="{StaticResource ModernButton}" Padding="10,12" Click="PresetCarbon_Click">
+                                <StackPanel>
+                                    <TextBlock Text="Carbon Glass" FontSize="13" FontWeight="SemiBold" Foreground="#FFF8FAFC" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Фон 60% • Баланс" FontSize="10.5" Foreground="#FF94A3B8" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="PresetStealthBtn" Grid.Column="2" Style="{StaticResource ModernButton}" Padding="10,12" Click="PresetStealth_Click">
+                                <StackPanel>
+                                    <TextBlock Text="Stealth" FontSize="13" FontWeight="SemiBold" Foreground="#FFF8FAFC" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Фон 28% • Макс. обзор" FontSize="10.5" Foreground="#FF94A3B8" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="PresetBroadcastBtn" Grid.Column="4" Style="{StaticResource ModernButton}" Padding="10,12" Click="PresetBroadcast_Click">
+                                <StackPanel>
+                                    <TextBlock Text="Broadcast" FontSize="13" FontWeight="SemiBold" Foreground="#FFF8FAFC" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Фон 82% • Контраст" FontSize="10.5" Foreground="#FF94A3B8" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <TextBlock Text="ОБЩИЙ МАСШТАБ ВСЕХ ВИДЖЕТОВ" Style="{StaticResource SectionTitle}" />
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,12" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Масштаб интерфейса (от 70% до 220%)" FontSize="12.5" Foreground="#FFE2E8F0" />
+                                    <TextBlock x:Name="AppScaleVal" Text="120%" FontFamily="{StaticResource HudMonoFont}" FontSize="13" FontWeight="Bold" Foreground="#FF60A5FA" HorizontalAlignment="Right" />
+                                </Grid>
+                                <Slider x:Name="AppScaleSlider" Style="{StaticResource CleanSlider}" Minimum="0.70" Maximum="2.20" SmallChange="0.05" LargeChange="0.15" ValueChanged="GlobalScale_ValueChanged" />
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Style="{StaticResource ModernButton}" Content="100%" Padding="10,4" Margin="0,0,6,0" Tag="1.0" Click="QuickScalePreset_Click" />
+                                    <Button Style="{StaticResource ModernButton}" Content="125%" Padding="10,4" Margin="0,0,6,0" Tag="1.25" Click="QuickScalePreset_Click" />
+                                    <Button Style="{StaticResource ModernButton}" Content="150%" Padding="10,4" Margin="0,0,6,0" Tag="1.5" Click="QuickScalePreset_Click" />
+                                    <Button Style="{StaticResource ModernButton}" Content="175%" Padding="10,4" Margin="0,0,6,0" Tag="1.75" Click="QuickScalePreset_Click" />
+                                    <Button Style="{StaticResource ModernButton}" Content="200%" Padding="10,4" Tag="2.0" Click="QuickScalePreset_Click" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="ПРОЗРАЧНОСТЬ ПОДЛОЖЕК" Style="{StaticResource SectionTitle}" />
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,12" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Плотность фона панелей (0% — полностью прозрачный фон)" FontSize="12.5" Foreground="#FFE2E8F0" />
+                                    <TextBlock x:Name="AppBackdropVal" Text="62%" FontFamily="{StaticResource HudMonoFont}" FontSize="13" FontWeight="Bold" Foreground="#FF38BDF8" HorizontalAlignment="Right" />
+                                </Grid>
+                                <Slider x:Name="AppBackdropSlider" Style="{StaticResource CleanSlider}" Minimum="0.00" Maximum="0.95" SmallChange="0.05" LargeChange="0.10" ValueChanged="BackdropOpacity_ValueChanged" />
+                                <TextBlock Text="Меняет прозрачность только тёмной подложки виджетов — текст, цвета классов и графики педалей остаются 100% яркими."
+                                           FontSize="11.5" Foreground="#FF94A3B8" TextWrapping="Wrap" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- FONT SELECTION -->
+                        <TextBlock Text="ШРИФТЫ ОВЕРЛЕЯ (ТЕКСТ И ЦИФРЫ)" Style="{StaticResource SectionTitle}" />
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,12">
+                            <StackPanel>
+                                <WrapPanel Margin="0,0,0,12">
+                                    <Button Style="{StaticResource ModernButton}" Content="Modern (Segoe + Cascadia)" Padding="9,5" Margin="0,0,6,6" Tag="Segoe UI Variable Text|Cascadia Mono" Click="FontPreset_Click" />
+                                    <Button Style="{StaticResource ModernButton}" Content="Motorsport DIN (Bahnschrift)" Padding="9,5" Margin="0,0,6,6" Tag="Bahnschrift|Bahnschrift" Click="FontPreset_Click" />
+                                    <Button Style="{StaticResource ModernButton}" Content="Racelab F1 (Rajdhani)" Padding="9,5" Margin="0,0,6,6" Tag="Rajdhani|Rajdhani" Click="FontPreset_Click" />
+                                    <Button Style="{StaticResource ModernButton}" Content="GT3 Tech (Exo 2)" Padding="9,5" Margin="0,0,6,6" Tag="Exo 2|Cascadia Mono" Click="FontPreset_Click" />
+                                </WrapPanel>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="14" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Шрифт имён и заголовков" FontSize="11.5" Foreground="#FF94A3B8" Margin="0,0,0,5" />
+                                        <ComboBox x:Name="UiFontCombo" Style="{StaticResource DarkComboBox}" SelectionChanged="FontCombo_SelectionChanged" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Шрифт цифр, таймингов и RPM" FontSize="11.5" Foreground="#FF94A3B8" Margin="0,0,0,5" />
+                                        <ComboBox x:Name="MonoFontCombo" Style="{StaticResource DarkComboBox}" SelectionChanged="FontCombo_SelectionChanged" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- PAGE 3: HUD PREFERENCES -->
+                <ScrollViewer x:Name="PageHudPrefs" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,4,22,16" Visibility="Collapsed">
+                    <StackPanel>
+                        <!-- Relative & Standings -->
+                        <TextBlock Text="RELATIVE И STANDINGS (ФИШКИ RACELAB)" Style="{StaticResource SectionTitle}" />
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,10" Margin="0,0,0,14">
+                            <StackPanel>
+                                <CheckBox x:Name="ShowBrandIconsCheck" Style="{StaticResource CleanToggle}" Content="Показывать векторные иконки марок машин (Porsche, Ferrari, BMW и др.)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="RelShowPaceCheck" Style="{StaticResource CleanToggle}" Content="Relative: показывать разницу темпа соперника относительно тебя (±0.4s)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="RelShowIrCheck" Style="{StaticResource CleanToggle}" Content="Relative: показывать iRating" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="RelShowLicCheck" Style="{StaticResource CleanToggle}" Content="Relative: показывать лицензию и Safety Rating" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="StdShowPosDeltaCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать отыгранные/потерянные позиции (▲2 / ▼1)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="StdShowTireCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать тип резины (S / M / H / W / D)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="StdShowIntervalCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать Interval до машины впереди вместо Gap к лидеру" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="StdShowDeltaIrCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать прогноз ±iR" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="StdShowLastLapCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать последний круг (фиолетовый = лучший в классе)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="StdShowPitsCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать пит-стопы и длину стинта" Margin="0,4" Click="PrefsChanged_Click" />
+
+                                <Grid Margin="0,10,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Максимум строк в основном классе Standings:" FontSize="12.5" Foreground="#FFE2E8F0" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Style="{StaticResource ModernButton}" Content="−" Width="30" Padding="0,3" Click="StandingsRowsMinus_Click" />
+                                        <TextBlock x:Name="StandingsRowsText" Text="10" FontFamily="{StaticResource HudMonoFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FF60A5FA" Width="40" TextAlignment="Center" VerticalAlignment="Center" />
+                                        <Button Style="{StaticResource ModernButton}" Content="+" Width="30" Padding="0,3" Click="StandingsRowsPlus_Click" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Inputs -->
+                        <TextBlock Text="INPUT TELEMETRY" Style="{StaticResource SectionTitle}" />
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,10" Margin="0,0,0,14">
+                            <StackPanel>
+                                <CheckBox x:Name="InpShowShiftCheck" Style="{StaticResource CleanToggle}" Content="Показывать полосу шифт-лайтов RPM сверху" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="InpShowWheelCheck" Style="{StaticResource CleanToggle}" Content="Показывать визуал угла руля" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="InpShowClutchCheck" Style="{StaticResource CleanToggle}" Content="Показывать педаль и линию сцепления" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="InpShowElecCheck" Style="{StaticResource CleanToggle}" Content="Показывать электронику машины (Brake Bias, TC, ABS)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="InpShowDeltaCheck" Style="{StaticResource CleanToggle}" Content="Показывать встроенный Delta Bar к лучшему кругу" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="InpShowCornerSpeedCheck" Style="{StaticResource CleanToggle}" Content="Показывать минимальную скорость в повороте (Apex Min Speed)" Margin="0,4" Click="PrefsChanged_Click" />
+
+                                <Grid Margin="0,10,0,2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Margin="0,0,0,4">
+                                        <TextBlock Text="Длина графика педалей (в секундах):" FontSize="12.5" Foreground="#FFE2E8F0" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="GraphSecondsVal" Text="3.5 сек" FontFamily="{StaticResource HudMonoFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FF60A5FA" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                    </Grid>
+                                    <Grid Grid.Row="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Slider x:Name="GraphSecondsSlider" Grid.Column="0" Style="{StaticResource CleanSlider}" Minimum="1.0" Maximum="12.0" SmallChange="0.5" LargeChange="1.0" IsSnapToTickEnabled="True" TickFrequency="0.5" ValueChanged="GraphSeconds_ValueChanged" Margin="0,0,12,0" />
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Button Style="{StaticResource ModernButton}" Content="2s" Padding="8,3" Margin="0,0,4,0" Tag="2.0" Click="GraphSecondsPreset_Click" />
+                                            <Button Style="{StaticResource ModernButton}" Content="4s" Padding="8,3" Margin="0,0,4,0" Tag="4.0" Click="GraphSecondsPreset_Click" />
+                                            <Button Style="{StaticResource ModernButton}" Content="6s" Padding="8,3" Margin="0,0,4,0" Tag="6.0" Click="GraphSecondsPreset_Click" />
+                                            <Button Style="{StaticResource ModernButton}" Content="10s" Padding="8,3" Tag="10.0" Click="GraphSecondsPreset_Click" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Fuel, Radar & General -->
+                        <TextBlock Text="ТОПЛИВО, РАДАР И ПОВЕДЕНИЕ" Style="{StaticResource SectionTitle}" />
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,10">
+                            <StackPanel>
+                                <CheckBox x:Name="RadarAutoHideCheck" Style="{StaticResource CleanToggle}" Content="Автоскрытие радара, когда рядом нет машин (в Lock-режиме)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="OnlyIRacingFocusCheck" Style="{StaticResource CleanToggle}" Content="Показывать оверлей только когда активно окно iRacing (скрывать при Alt+Tab)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="AutoHideOutOfSimCheck" Style="{StaticResource CleanToggle}" Content="Скрывать оверлей, когда сессия iRacing не загружена" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="ImperialUnitsCheck" Style="{StaticResource CleanToggle}" Content="Имперские единицы (mph / gal вместо km/h / L)" Margin="0,4" Click="PrefsChanged_Click" />
+
+                                <Grid Margin="0,10,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Режим расчёта расхода топлива:" FontSize="12.5" Foreground="#FFE2E8F0" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button x:Name="FuelModeAvgBtn" Style="{StaticResource ModernButton}" Content="AVG 5L" Padding="9,4" Margin="0,0,4,0" Tag="Avg" Click="FuelMode_Click" />
+                                        <Button x:Name="FuelModeLastBtn" Style="{StaticResource ModernButton}" Content="LAST" Padding="9,4" Margin="0,0,4,0" Tag="Last" Click="FuelMode_Click" />
+                                        <Button x:Name="FuelModeMaxBtn" Style="{StaticResource ModernButton}" Content="MAX (Safe)" Padding="9,4" Tag="Max" Click="FuelMode_Click" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="0,6,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Запас топлива на пит-стоп (Fuel Margin):" FontSize="12.5" Foreground="#FFE2E8F0" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Style="{StaticResource ModernButton}" Content="−" Width="30" Padding="0,3" Click="FuelMarginMinus_Click" />
+                                        <TextBlock x:Name="FuelMarginText" Text="+0.5 L" FontFamily="{StaticResource HudMonoFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FF60A5FA" Width="64" TextAlignment="Center" VerticalAlignment="Center" />
+                                        <Button Style="{StaticResource ModernButton}" Content="+" Width="30" Padding="0,3" Click="FuelMarginPlus_Click" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Footer -->
+                <Border Grid.Row="2" Background="#FF0B0E14" BorderBrush="#FF1C2331" BorderThickness="0,1,0,0" Padding="22,0">
+                    <Grid>
+                        <TextBlock Text="В iRacing включи Borderless Windowed • Глобальный хоткей Lock/Unlock: Ctrl + Shift + L"
+                                   FontSize="11" Foreground="#FF64748B" VerticalAlignment="Center" />
+                        <TextBlock Text="ApexHUD 1.1" FontFamily="{StaticResource HudMonoFont}" FontSize="10.5" Foreground="#FF475569" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
