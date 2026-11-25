@@ -9,9 +9,8 @@ using ApexHUD.Core.Telemetry;
 namespace ApexHUD.Windows;
 
 /// <summary>
-/// Racelab-grade Multiclass Standings overlay:
-/// Position gain/loss, brand icons, tire compound badge, SOF + +/-iR, Gap or Interval mode,
-/// purple class best lap highlight, stint/pit info, and dynamic fonts.
+/// Racelab-grade Multiclass Standings overlay with vector icons for track, laps, timer,
+/// class SOF/cars, column headers, purple fastest lap, and pit stops.
 /// </summary>
 public sealed class StandingsWindow : OverlayWindowBase
 {
@@ -19,7 +18,9 @@ public sealed class StandingsWindow : OverlayWindowBase
     private readonly Grid _headerGrid;
     private readonly Grid _legendGrid;
     private readonly TextBlock _trackText;
-    private readonly TextBlock _sessionMetaText;
+    private readonly TextBlock _sessionTypeText;
+    private readonly TextBlock _lapsText;
+    private readonly TextBlock _timerText;
     private readonly StackPanel _bodyPanel;
 
     private FontFamily _uiFont = new("Segoe UI Variable Text, Segoe UI");
@@ -43,7 +44,7 @@ public sealed class StandingsWindow : OverlayWindowBase
     {
         _outerBorder = new Border
         {
-            Width = 562,
+            Width = 576,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
             SnapsToDevicePixels = true
@@ -51,10 +52,18 @@ public sealed class StandingsWindow : OverlayWindowBase
 
         var stack = new StackPanel();
 
+        // Header with crisp vector icons (Flag + Track | Session | LapLoop + Laps | Stopwatch + Time)
         _headerGrid = new Grid { Height = 26 };
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+        var leftTrack = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(9, 0, 8, 0)
+        };
+        leftTrack.Children.Add(new HudMetricIcon(HudIconKind.Flag, "#60A5FA", 11) { Margin = new Thickness(0, 0, 5, 0) });
         _trackText = new TextBlock
         {
             Text = "Standings",
@@ -62,26 +71,58 @@ public sealed class StandingsWindow : OverlayWindowBase
             FontWeight = FontWeights.SemiBold,
             Foreground = TextWhite,
             VerticalAlignment = VerticalAlignment.Center,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            Margin = new Thickness(10, 0, 8, 0)
+            TextTrimming = TextTrimming.CharacterEllipsis
         };
-        Grid.SetColumn(_trackText, 0);
-        _headerGrid.Children.Add(_trackText);
+        leftTrack.Children.Add(_trackText);
+        Grid.SetColumn(leftTrack, 0);
+        _headerGrid.Children.Add(leftTrack);
 
-        _sessionMetaText = new TextBlock
+        var rightMeta = new StackPanel
         {
-            Text = "WAIT  •  L 0/0  •  00:00",
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 9, 0)
+        };
+        _sessionTypeText = new TextBlock
+        {
+            Text = "RACE",
+            FontSize = 9.5,
+            FontWeight = FontWeights.Bold,
+            Foreground = AccentSky,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 10, 0)
+        };
+        rightMeta.Children.Add(_sessionTypeText);
+
+        rightMeta.Children.Add(new HudMetricIcon(HudIconKind.LapLoop, "#94A3B8", 11) { Margin = new Thickness(0, 0, 3, 0) });
+        _lapsText = new TextBlock
+        {
+            Text = "0/0",
             FontSize = 10.5,
+            FontWeight = FontWeights.SemiBold,
             Foreground = TextSoft,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 10, 0)
         };
-        Grid.SetColumn(_sessionMetaText, 1);
-        _headerGrid.Children.Add(_sessionMetaText);
+        rightMeta.Children.Add(_lapsText);
+
+        rightMeta.Children.Add(new HudMetricIcon(HudIconKind.Stopwatch, "#94A3B8", 11) { Margin = new Thickness(0, 0, 3, 0) });
+        _timerText = new TextBlock
+        {
+            Text = "00:00",
+            FontSize = 10.5,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = TextSoft,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        rightMeta.Children.Add(_timerText);
+
+        Grid.SetColumn(rightMeta, 1);
+        _headerGrid.Children.Add(rightMeta);
 
         stack.Children.Add(_headerGrid);
 
-        _legendGrid = new Grid { Height = 18 };
+        _legendGrid = new Grid { Height = 19 };
         stack.Children.Add(_legendGrid);
         stack.Children.Add(new Border { Height = 1, Background = Hairline });
 
@@ -104,7 +145,9 @@ public sealed class StandingsWindow : OverlayWindowBase
         _legendGrid.Background = MakeBackdropBrush(0.75, 0x0A, 0x0D, 0x13);
 
         _trackText.FontFamily = _uiFont;
-        _sessionMetaText.FontFamily = _monoFont;
+        _sessionTypeText.FontFamily = _uiFont;
+        _lapsText.FontFamily = _monoFont;
+        _timerText.FontFamily = _monoFont;
 
         RebuildLegend();
         _renderTick = 0;
@@ -120,12 +163,12 @@ public sealed class StandingsWindow : OverlayWindowBase
         if (Settings.ShowStandingsPosDelta) AddColHeader(_legendGrid, 2, "±", HorizontalAlignment.Center);
         AddColHeader(_legendGrid, 3, "#", HorizontalAlignment.Center);
         AddColHeader(_legendGrid, 5, "DRIVER", HorizontalAlignment.Left);
-        if (Settings.ShowStandingsTireCompound) AddColHeader(_legendGrid, 6, "T", HorizontalAlignment.Center);
-        AddColHeader(_legendGrid, 7, "iR", HorizontalAlignment.Right);
+        if (Settings.ShowStandingsTireCompound) AddIconColHeader(_legendGrid, 6, HudIconKind.TireWheel, "", HorizontalAlignment.Center);
+        AddIconColHeader(_legendGrid, 7, HudIconKind.RatingBar, "iR", HorizontalAlignment.Right);
         if (Settings.ShowStandingsDeltaIR) AddColHeader(_legendGrid, 8, "±iR", HorizontalAlignment.Right);
-        AddColHeader(_legendGrid, 9, Settings.ShowStandingsInterval ? "INT" : "GAP", HorizontalAlignment.Right);
+        AddIconColHeader(_legendGrid, 9, HudIconKind.Stopwatch, Settings.ShowStandingsInterval ? "INT" : "GAP", HorizontalAlignment.Right);
         if (Settings.ShowStandingsLastLap) AddColHeader(_legendGrid, 10, "LAST", HorizontalAlignment.Right);
-        if (Settings.ShowStandingsPits) AddColHeader(_legendGrid, 11, "PIT", HorizontalAlignment.Center);
+        if (Settings.ShowStandingsPits) AddIconColHeader(_legendGrid, 11, HudIconKind.Wrench, "PIT", HorizontalAlignment.Center);
     }
 
     private void ConfigureRowColumns(Grid g)
@@ -137,11 +180,11 @@ public sealed class StandingsWindow : OverlayWindowBase
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Settings.ShowCarBrandIcons ? 22 : 0) });        // 4: brand icon
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });                       // 5: driver
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Settings.ShowStandingsTireCompound ? 22 : 0) });// 6: tire
-        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });                                         // 7: iR
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(42) });                                         // 7: iR
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Settings.ShowStandingsDeltaIR ? 40 : 0) });     // 8: +/-iR
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(54) });                                         // 9: gap/int
-        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Settings.ShowStandingsLastLap ? 62 : 0) });     // 10: last lap
-        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Settings.ShowStandingsPits ? 38 : 0) });        // 11: pit/stint
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Settings.ShowStandingsLastLap ? 70 : 0) });     // 10: last lap (+ bolt)
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Settings.ShowStandingsPits ? 42 : 0) });        // 11: pit/stint
     }
 
     private void AddColHeader(Grid g, int col, string text, HorizontalAlignment align)
@@ -161,18 +204,43 @@ public sealed class StandingsWindow : OverlayWindowBase
         g.Children.Add(tb);
     }
 
+    private void AddIconColHeader(Grid g, int col, HudIconKind icon, string text, HorizontalAlignment align)
+    {
+        var sp = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = align,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(2, 0, 3, 0)
+        };
+        sp.Children.Add(new HudMetricIcon(icon, "#64748B", 9.5) { Margin = new Thickness(0, 0, string.IsNullOrEmpty(text) ? 0 : 2, 0) });
+        if (!string.IsNullOrEmpty(text))
+        {
+            sp.Children.Add(new TextBlock
+            {
+                Text = text,
+                FontFamily = _uiFont,
+                FontSize = 9.5,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = TextMuted,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+        }
+        Grid.SetColumn(sp, col);
+        g.Children.Add(sp);
+    }
+
     public void UpdateData(TelemetrySnapshot snap)
     {
         _renderTick++;
         if (_renderTick % 4 != 1 && _bodyPanel.Children.Count > 0) return;
 
-        string lapsStr = snap.Session.TotalLaps > 0
-            ? $"Lap {snap.Session.CurrentLap}/{snap.Session.TotalLaps}"
-            : $"Lap {snap.Session.CurrentLap}";
-        string timeStr = FormatHelpers.FormatTimeRemaining(snap.Session.TimeRemainingSeconds);
-
         _trackText.Text = snap.Session.TrackName;
-        _sessionMetaText.Text = $"{snap.Session.SessionType}  •  {lapsStr}  •  {timeStr}";
+        _sessionTypeText.Text = snap.Session.SessionType;
+        _lapsText.Text = snap.Session.TotalLaps > 0
+            ? $"{snap.Session.CurrentLap}/{snap.Session.TotalLaps}"
+            : $"{snap.Session.CurrentLap}";
+        _timerText.Text = FormatHelpers.FormatTimeRemaining(snap.Session.TimeRemainingSeconds);
 
         _bodyPanel.Children.Clear();
 
@@ -206,7 +274,7 @@ public sealed class StandingsWindow : OverlayWindowBase
 
     private UIElement BuildClassStrip(StandingsClassGroup group)
     {
-        var strip = new Grid { Height = 21, Background = MakeBackdropBrush(1.05, 0x13, 0x18, 0x24) };
+        var strip = new Grid { Height = 22, Background = MakeBackdropBrush(1.05, 0x13, 0x18, 0x24) };
         strip.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3) });
         strip.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         strip.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -230,15 +298,34 @@ public sealed class StandingsWindow : OverlayWindowBase
         Grid.SetColumn(name, 1);
         strip.Children.Add(name);
 
-        var meta = new TextBlock
+        // Class SOF with Trophy icon + Car count with CarsGrid icon
+        var meta = new StackPanel
         {
-            Text = $"SOF {FormatHelpers.FormatIRating(group.Sof)}  •  {group.TotalDrivers} cars",
-            FontFamily = _monoFont,
-            FontSize = 10,
-            Foreground = TextMuted,
+            Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 9, 0)
         };
+        meta.Children.Add(new HudMetricIcon(HudIconKind.Trophy, "#FBBF24", 10) { Margin = new Thickness(0, 0, 3, 0) });
+        meta.Children.Add(new TextBlock
+        {
+            Text = FormatHelpers.FormatIRating(group.Sof),
+            FontFamily = _monoFont,
+            FontSize = 10,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = TextSoft,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 10, 0)
+        });
+        meta.Children.Add(new HudMetricIcon(HudIconKind.CarsGrid, "#94A3B8", 10) { Margin = new Thickness(0, 0, 3, 0) });
+        meta.Children.Add(new TextBlock
+        {
+            Text = group.TotalDrivers.ToString(),
+            FontFamily = _monoFont,
+            FontSize = 10,
+            Foreground = TextMuted,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
         Grid.SetColumn(meta, 3);
         strip.Children.Add(meta);
 
@@ -357,22 +444,49 @@ public sealed class StandingsWindow : OverlayWindowBase
 
         if (Settings.ShowStandingsLastLap)
         {
-            Brush lapBrush = d.IsClassBestLap ? PurpleBest : TextSoft;
-            FontWeight lapWeight = d.IsClassBestLap ? FontWeights.Bold : FontWeights.Normal;
-            AddCell(g, 10, FormatHelpers.FormatLapTime(d.LastLapSeconds), _monoFont, 11,
-                lapBrush, lapWeight, HorizontalAlignment.Right);
+            var lapPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 4, 0)
+            };
+            if (d.IsClassBestLap)
+                lapPanel.Children.Add(new HudMetricIcon(HudIconKind.FastestBolt, "#C084FC", 9.5) { Margin = new Thickness(0, 0, 2, 0) });
+
+            lapPanel.Children.Add(new TextBlock
+            {
+                Text = FormatHelpers.FormatLapTime(d.LastLapSeconds),
+                FontFamily = _monoFont,
+                FontSize = 11,
+                Foreground = d.IsClassBestLap ? PurpleBest : TextSoft,
+                FontWeight = d.IsClassBestLap ? FontWeights.Bold : FontWeights.Normal,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            Grid.SetColumn(lapPanel, 10);
+            g.Children.Add(lapPanel);
         }
 
         if (Settings.ShowStandingsPits)
         {
-            string pitStr = d.IsOnPitRoad
-                ? "PIT"
-                : d.PitStops > 0
-                    ? $"P{d.PitStops}·{d.StintLaps}"
-                    : (d.StintLaps > 0 ? $"L{d.StintLaps}" : "-");
-            Brush pitBrush = d.IsOnPitRoad ? PitAmber : TextMuted;
-            AddCell(g, 11, pitStr, _monoFont, 9.5, pitBrush,
-                d.IsOnPitRoad ? FontWeights.Bold : FontWeights.Normal, HorizontalAlignment.Center);
+            var pitPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            if (d.IsOnPitRoad)
+            {
+                pitPanel.Children.Add(new HudMetricIcon(HudIconKind.Wrench, "#FBBF24", 9.5) { Margin = new Thickness(0, 0, 2, 0) });
+                pitPanel.Children.Add(new TextBlock { Text = "PIT", FontFamily = _monoFont, FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = PitAmber });
+            }
+            else
+            {
+                string pitStr = d.PitStops > 0 ? $"P{d.PitStops}·{d.StintLaps}" : (d.StintLaps > 0 ? $"L{d.StintLaps}" : "-");
+                pitPanel.Children.Add(new TextBlock { Text = pitStr, FontFamily = _monoFont, FontSize = 9.5, Foreground = TextMuted });
+            }
+            Grid.SetColumn(pitPanel, 11);
+            g.Children.Add(pitPanel);
         }
 
         return new Border
