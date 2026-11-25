@@ -149,9 +149,25 @@ public sealed class DemoTelemetryProvider
         relative.AddRange(behind);
 
         // Standings grouped by class (GT3 first since player is GT3, then LMP2)
+        // After 12s in Demo Mode, gently cycle realistic overtakes every ~4.5s so Standings slide/flash animations are visible live!
+        var demoGt3Standings = new List<DemoCar>(gt3Cars);
+        if (_simTime > 12.0 && demoGt3Standings.Count >= 6)
+        {
+            int battleStage = (int)((_simTime - 12.0) / 4.5) % 4;
+            if (battleStage == 1)
+                (demoGt3Standings[2], demoGt3Standings[3]) = (demoGt3Standings[3], demoGt3Standings[2]); // Player overtakes P3!
+            else if (battleStage == 2)
+            {
+                (demoGt3Standings[2], demoGt3Standings[3]) = (demoGt3Standings[3], demoGt3Standings[2]);
+                (demoGt3Standings[4], demoGt3Standings[5]) = (demoGt3Standings[5], demoGt3Standings[4]);
+            }
+            else if (battleStage == 3)
+                (demoGt3Standings[4], demoGt3Standings[5]) = (demoGt3Standings[5], demoGt3Standings[4]);
+        }
+
         var standings = new List<StandingsClassGroup>
         {
-            BuildDemoGroup(2, "GT3", "#F5A623", gt3Cars),
+            BuildDemoGroup(2, "GT3", "#F5A623", demoGt3Standings),
             BuildDemoGroup(1, "LMP2", "#38BDF8", _cars.Where(c => c.ClassId == 1).ToList())
         };
 
