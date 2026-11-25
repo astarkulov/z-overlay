@@ -57,7 +57,7 @@
                                 <TextBlock Text="Демо-режим (60 Гц)" FontSize="12" Foreground="#FFCBD5E1" />
                             </CheckBox>
 
-                            <Button x:Name="LockButton" Style="{StaticResource ModernPrimaryButton}" Content="Закрепить (Ctrl+Shift+L)" Click="ToggleLock_Click" Margin="0,0,0,7" />
+                            <Button x:Name="LockButton" Style="{StaticResource ModernPrimaryButton}" Content="Закрепить для гонки" Click="ToggleLock_Click" Margin="0,0,0,7" />
                             <Button Style="{StaticResource ModernButton}" Content="Сбросить позиции" Click="ResetLayout_Click" />
                         </StackPanel>
                     </Border>
@@ -484,7 +484,7 @@
                     <Grid>
                         <TextBlock Text="В iRacing включи Borderless Windowed • Глобальный хоткей Lock/Unlock: Ctrl + Shift + L"
                                    FontSize="11" Foreground="#FF64748B" VerticalAlignment="Center" />
-                        <TextBlock Text="ApexHUD 1.1.3" FontFamily="{StaticResource HudMonoFont}" FontSize="10.5" Foreground="#FF475569" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        <TextBlock Text="ApexHUD 1.1.4" FontFamily="{StaticResource HudMonoFont}" FontSize="10.5" Foreground="#FF475569" HorizontalAlignment="Right" VerticalAlignment="Center" />
                     </Grid>
                 </Border>
             </Grid>

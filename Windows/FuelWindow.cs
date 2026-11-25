@@ -298,8 +298,8 @@ public sealed class FuelWindow : OverlayWindowBase
         _stopsText.Text = f.PitStopsRemaining == 0 ? "NO STOP" : $"{f.PitStopsRemaining} STOP{(f.PitStopsRemaining > 1 ? "S" : "")}";
 
         _fuelLevelVal.Text = $"{f.FuelLevelLiters * mult:0.0} {unit}";
-        _estLapsVal.Text = f.HasReliableBurn ? $"{f.EstLapsOnFuel:0.1}" : "--";
-        _raceLapsVal.Text = f.RaceLapsRemaining > 0.05f ? $"{f.RaceLapsRemaining:0.1}" : "--";
+        _estLapsVal.Text = f.HasReliableBurn ? $"{f.EstLapsOnFuel:0.0}" : "--";
+        _raceLapsVal.Text = f.RaceLapsRemaining > 0.05f ? $"{f.RaceLapsRemaining:0.0}" : "--";
 
         _lastBurnVal.Text = f.LastLapBurn > 0.05f ? $"{f.LastLapBurn * mult:0.00}" : "--";
         _avgBurnVal.Text = f.AvgLapBurn > 0.05f ? $"{f.AvgLapBurn * mult:0.00}" : "--";
@@ -315,8 +315,8 @@ public sealed class FuelWindow : OverlayWindowBase
         }
         else
         {
-            _minAddVal.Text = f.FuelToAddMinLiters <= 0.1f ? "0.0" : $"+{f.FuelToAddMinLiters * mult:0.1}";
-            _safeAddVal.Text = f.FuelToAddSafeLiters <= 0.1f ? "0.0" : $"+{f.FuelToAddSafeLiters * mult:0.1}";
+            _minAddVal.Text = f.FuelToAddMinLiters <= 0.1f ? "0.0" : $"+{f.FuelToAddMinLiters * mult:0.0}";
+            _safeAddVal.Text = f.FuelToAddSafeLiters <= 0.1f ? "0.0" : $"+{f.FuelToAddSafeLiters * mult:0.0}";
 
             if (f.FuelToAddLiters <= 0.1f)
             {
@@ -325,12 +325,12 @@ public sealed class FuelWindow : OverlayWindowBase
             }
             else
             {
-                _targetAddVal.Text = $"+{f.FuelToAddLiters * mult:0.1} {unit}";
+                _targetAddVal.Text = $"+{f.FuelToAddLiters * mult:0.0} {unit}";
                 _targetAddVal.Foreground = AccentAmber;
             }
         }
 
-        _refuelTimeVal.Text = f.EstRefuelSeconds > 0.1f ? $"PIT FILL ~{f.EstRefuelSeconds:0.1}s" : "PIT FILL: 0.0s";
+        _refuelTimeVal.Text = f.EstRefuelSeconds > 0.1f ? $"PIT FILL ~{f.EstRefuelSeconds:0.0}s" : "PIT FILL: 0.0s";
         _saveTargetVal.Text = f.TargetBurnPerLap > 0.05f && f.RaceLapsRemaining > 0.1f
             ? $"SAVE: {f.TargetBurnPerLap * mult:0.00} {unit}/L"
             : "SAVE: --";

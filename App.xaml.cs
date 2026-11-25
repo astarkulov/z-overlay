@@ -36,6 +36,12 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Always format telemetry numbers with crisp motorsport dots (e.g. 54.4%, 36.7 L, +0.26)
+        Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
+
         DispatcherUnhandledException += (_, exArgs) =>
         {
             LogCrash(exArgs.Exception);
@@ -49,6 +55,14 @@ public partial class App : Application
         };
 
         base.OnStartup(e);
+
+        // Headless high-DPI screenshot capture mode for README / docs
+        if (e.Args.Length >= 2 && string.Equals(e.Args[0], "--capture-screenshots", StringComparison.OrdinalIgnoreCase))
+        {
+            ApexHUD.Core.Diagnostics.ScreenshotExporter.CaptureAll(e.Args[1]);
+            Shutdown(0);
+            return;
+        }
 
         _settings = AppSettings.Load();
 

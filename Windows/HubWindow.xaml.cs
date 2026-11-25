@@ -611,12 +611,12 @@ public partial class HubWindow : Window
         if (_settings.Locked)
         {
             LockButton.Style = (Style)FindResource("ModernButton");
-            LockButton.Content = "Разблокировать (Ctrl+Shift+L)";
+            LockButton.Content = "Разблокировать HUD";
         }
         else
         {
             LockButton.Style = (Style)FindResource("ModernPrimaryButton");
-            LockButton.Content = "Закрепить (Ctrl+Shift+L)";
+            LockButton.Content = "Закрепить для гонки";
         }
     }
 
