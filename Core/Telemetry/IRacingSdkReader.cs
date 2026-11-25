@@ -24,6 +24,7 @@ public sealed class IRacingSdkReader : IDisposable
 
     private readonly Dictionary<string, VarHeader> _vars = new(StringComparer.Ordinal);
     private readonly FuelTracker _fuelTracker = new();
+    private readonly CornerSpeedTracker _cornerTracker = new();
     private readonly int[] _pitStops = new int[MaxCars];
     private readonly int[] _lastPitLap = new int[MaxCars];
     private readonly int[] _startClassPos = new int[MaxCars];
@@ -101,6 +102,7 @@ public sealed class IRacingSdkReader : IDisposable
         _lastSessionInfoUpdate = -1;
         _lastSessionNum = -1;
         _fuelTracker.Reset();
+        _cornerTracker.Reset();
         Array.Clear(_pitStops);
         Array.Clear(_lastPitLap);
         Array.Clear(_startClassPos);
@@ -217,6 +219,7 @@ public sealed class IRacingSdkReader : IDisposable
         {
             _lastSessionNum = sessionNum;
             _fuelTracker.Reset();
+            _cornerTracker.Reset();
             Array.Clear(_pitStops);
             Array.Clear(_lastPitLap);
             Array.Clear(_startClassPos);
@@ -263,17 +266,40 @@ public sealed class IRacingSdkReader : IDisposable
         float absSet = ReadFloat("dcABS", -1f);
         bool deltaOk = ReadBool("LapDeltaToBestLap_OK");
         float lapDelta = deltaOk ? ReadFloat("LapDeltaToBestLap") : 0f;
+        double sessionTime = ReadDouble("SessionTime");
+        float playerSpeedMs = Math.Max(0f, ReadFloat("Speed"));
+        float playerThrottle = Math.Clamp(ReadFloat("Throttle"), 0f, 1f);
+        float playerBrake = Math.Clamp(ReadFloat("Brake"), 0f, 1f);
+        float playerSteerRad = ReadFloat("SteeringWheelAngle");
+        int playerClassId = _yamlMeta.DriversByIdx.TryGetValue(playerIdx, out var pMeta) ? pMeta.CarClassId : 0;
+
+        var recentCorners = _cornerTracker.Update(
+            sessionTime,
+            playerIdx,
+            playerClassId,
+            playerSpeedMs,
+            playerBrake,
+            playerThrottle,
+            playerSteerRad,
+            lapDistPct,
+            isOnTrack && !onPitRoad,
+            _yamlMeta.TrackLengthMeters,
+            _carLapDistPct,
+            _carBestLap,
+            _carTrackSurface,
+            _carOnPitRoad,
+            _yamlMeta.DriversByIdx);
 
         var inputs = new InputTelemetry
         {
-            Throttle = Math.Clamp(ReadFloat("Throttle"), 0f, 1f),
-            Brake = Math.Clamp(ReadFloat("Brake"), 0f, 1f),
+            Throttle = playerThrottle,
+            Brake = playerBrake,
             Clutch = Math.Clamp(1f - rawClutch, 0f, 1f),
             AbsActive = ReadBool("BrakeABSactive"),
-            SteeringAngleRad = ReadFloat("SteeringWheelAngle"),
+            SteeringAngleRad = playerSteerRad,
             SteeringMaxRad = Math.Max(1.0f, ReadFloat("SteeringWheelAngleMax", 3.92f)),
             Gear = ReadInt("Gear"),
-            SpeedMs = Math.Max(0f, ReadFloat("Speed")),
+            SpeedMs = playerSpeedMs,
             Rpm = Math.Max(0f, ReadFloat("RPM")),
             ShiftFirstRpm = _yamlMeta.DriverCarSLFirstRpm,
             ShiftOptimalRpm = _yamlMeta.DriverCarSLShiftRpm,
@@ -283,7 +309,8 @@ public sealed class IRacingSdkReader : IDisposable
             TractionControl = tc >= 0f ? (int)Math.Round(tc) : -1,
             AbsSetting = absSet >= 0f ? (int)Math.Round(absSet) : -1,
             LapDeltaToBestSec = lapDelta,
-            HasLapDelta = deltaOk
+            HasLapDelta = deltaOk,
+            RecentCorners = recentCorners
         };
 
         // Fuel

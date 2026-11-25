@@ -43,6 +43,15 @@ public enum SessionFlagMask : uint
     Repair = 0x00100000
 }
 
+public sealed class CornerSpeedRecord
+{
+    public string Label { get; set; } = "C1";
+    public float PlayerMinMs { get; set; }
+    public float SessionFastestMinMs { get; set; }
+    public bool HasFastestRef { get; set; }
+    public bool IsLiveCorner { get; set; }
+}
+
 public sealed class InputTelemetry
 {
     public float Throttle { get; set; }           // 0..1
@@ -65,6 +74,9 @@ public sealed class InputTelemetry
     public int AbsSetting { get; set; } = -1;     // -1 if unavailable
     public float LapDeltaToBestSec { get; set; }  // negative = faster (green), positive = slower (red)
     public bool HasLapDelta { get; set; }
+
+    // Racelab-style last 4 corners: your min speed vs session fastest min speed at that track sector
+    public List<CornerSpeedRecord> RecentCorners { get; set; } = new();
 }
 
 public sealed class FuelTelemetry

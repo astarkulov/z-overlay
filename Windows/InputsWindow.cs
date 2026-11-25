@@ -9,27 +9,25 @@ using ApexHUD.Core.Telemetry;
 namespace ApexHUD.Windows;
 
 /// <summary>
-/// Racelab-grade Input Telemetry HUD:
-/// Shift lights + 60Hz rolling graph + pedal bars + Gear/Speed/RPM + GT3 Steering Wheel
-/// + live In-Car Electronics strip (Brake Bias, TC, ABS) + live Lap Delta Bar!
+/// 100% Modular Racelab-grade Input Telemetry HUD:
+/// Every module can be toggled independently (Shift bar, Pedal graph [configurable width & seconds],
+/// Vertical pedal bars, Gear/Speed/RPM cluster, Steering wheel, Clutch, BB/TC/ABS, Delta Bar,
+/// and Racelab 4-Corner Min Speed comparison vs Session Fastest).
 /// </summary>
 public sealed class InputsWindow : OverlayWindowBase
 {
     private readonly Border _outerBorder;
     private readonly Border _shiftRowHost;
     private readonly ShiftLightBar _shiftBar;
+
+    // Main horizontal modular zones + smart dividers
+    private readonly StackPanel _mainRow;
+    private readonly Grid _graphZone;
     private readonly InputGraphCanvas _graph;
     private readonly Border _absBadge;
-    private readonly Border _apexBadge;
-    private readonly TextBlock _apexText;
 
-    // Racelab Corner Minimum (Apex) Speed tracker
-    private bool _inCorner;
-    private float _currentCornerMinMs = float.MaxValue;
-    private float _lastApexSpeedMs;
-    private long _lastApexLockMs;
-    private float _recentMaxSpeedMs;
-
+    private readonly Border _divAfterGraph;
+    private readonly StackPanel _pedalsZone;
     private readonly StackPanel _clutchCol;
     private readonly Border _clutchFill;
     private readonly Border _brakeFill;
@@ -38,20 +36,20 @@ public sealed class InputsWindow : OverlayWindowBase
     private readonly TextBlock _brakePct;
     private readonly TextBlock _throttlePct;
 
+    private readonly Border _divAfterPedals;
+    private readonly Grid _gearZone;
     private readonly TextBlock _gearText;
     private readonly TextBlock _speedText;
     private readonly TextBlock _unitText;
     private readonly TextBlock _rpmText;
 
-    private readonly ColumnDefinition _wheelDividerCol;
-    private readonly ColumnDefinition _wheelCol;
-    private readonly Border _wheelDivider;
-    private readonly StackPanel _wheelStack;
+    private readonly Border _divAfterGear;
+    private readonly StackPanel _wheelZone;
     private readonly SteeringWheelVisual _wheel;
     private readonly TextBlock _steerDegText;
 
-    // Racelab Electronics + Live Delta Footer
-    private readonly Border _bottomStripHost;
+    // Bottom Strip 1: Electronics (BB/TC/ABS) + Live Delta Bar
+    private readonly Border _elecDeltaHost;
     private readonly StackPanel _elecPanel;
     private readonly TextBlock _bbText;
     private readonly TextBlock _tcText;
@@ -61,10 +59,15 @@ public sealed class InputsWindow : OverlayWindowBase
     private readonly Border _deltaBarRight;
     private readonly TextBlock _deltaText;
 
-    private const double PedalBarHeight = 68.0;
+    // Bottom Strip 2: Racelab 4-Corner Min Speed Strip (Last 4 corners: Your Min vs Session Fastest)
+    private readonly Border _cornersHost;
+    private readonly CornerSlotVisual[] _cornerSlots = new CornerSlotVisual[4];
+
+    private const double PedalBarHeight = 72.0;
 
     private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#24FFFFFF");
     private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
+    private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#E6EDF7");
     private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#CBD5E1");
     private static readonly SolidColorBrush ClutchBrush = FormatHelpers.GetFrozenBrush("#38BDF8");
     private static readonly SolidColorBrush BrakeBrush = FormatHelpers.GetFrozenBrush("#FF4757");
@@ -72,6 +75,17 @@ public sealed class InputsWindow : OverlayWindowBase
     private static readonly SolidColorBrush AbsBrush = FormatHelpers.GetFrozenBrush("#FCD34D");
     private static readonly SolidColorBrush DeltaGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
     private static readonly SolidColorBrush DeltaRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
+    private static readonly SolidColorBrush CornerLiveBg = FormatHelpers.GetFrozenBrush("#2838BDF8");
+    private static readonly SolidColorBrush CornerIdleBg = FormatHelpers.GetFrozenBrush("#12FFFFFF");
+
+    private sealed class CornerSlotVisual
+    {
+        public Border Box = null!;
+        public TextBlock Label = null!;
+        public TextBlock PlayerSpeed = null!;
+        public TextBlock FastestRef = null!;
+        public TextBlock Delta = null!;
+    }
 
     public InputsWindow(AppSettings settings) : base("Inputs", settings)
     {
@@ -84,9 +98,10 @@ public sealed class InputsWindow : OverlayWindowBase
 
         var rootStack = new StackPanel { Effect = HudTextShadow };
 
+        // 1) Top Shift Light Bar
         _shiftBar = new ShiftLightBar
         {
-            Height = 6,
+            Height = 7,
             Margin = new Thickness(6, 5, 6, 5)
         };
         _shiftRowHost = new Border
@@ -97,43 +112,21 @@ public sealed class InputsWindow : OverlayWindowBase
         };
         rootStack.Children.Add(_shiftRowHost);
 
-        var mainGrid = new Grid { Height = 100 };
-        mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(220) });
-        mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1) });
-        mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1) });
-        mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) });
-        _wheelDividerCol = new ColumnDefinition { Width = new GridLength(1) };
-        _wheelCol = new ColumnDefinition { Width = new GridLength(82) };
-        mainGrid.ColumnDefinitions.Add(_wheelDividerCol);
-        mainGrid.ColumnDefinitions.Add(_wheelCol);
+        // 2) Main Modular Horizontal Row
+        _mainRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Height = 104
+        };
 
-        // Zone 1: Rolling 60Hz Graph + Apex Min Speed + ABS badge
-        var graphHost = new Grid { Margin = new Thickness(6, 5, 6, 5) };
+        // Zone A: 60Hz Pedal Graph (configurable width & duration)
+        _graphZone = new Grid
+        {
+            Width = 240,
+            Margin = new Thickness(6, 5, 6, 5)
+        };
         _graph = new InputGraphCanvas();
-        graphHost.Children.Add(_graph);
-
-        _apexText = new TextBlock
-        {
-            Text = "MIN --",
-            FontSize = 10,
-            FontWeight = FontWeights.Bold,
-            Foreground = TextWhite
-        };
-        _apexBadge = new Border
-        {
-            Background = FormatHelpers.GetFrozenBrush("#CC0B0E14"),
-            BorderBrush = FormatHelpers.GetFrozenBrush("#6638BDF8"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(5, 1, 5, 1),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(4, 4, 0, 0),
-            Visibility = Visibility.Collapsed,
-            Child = _apexText
-        };
-        graphHost.Children.Add(_apexBadge);
+        _graphZone.Children.Add(_graph);
 
         _absBadge = new Border
         {
@@ -147,22 +140,22 @@ public sealed class InputsWindow : OverlayWindowBase
             Child = new TextBlock
             {
                 Text = "ABS",
-                FontSize = 9.5,
+                FontSize = 10,
                 FontWeight = FontWeights.ExtraBold,
                 Foreground = FormatHelpers.GetFrozenBrush("#0B0E14")
             }
         };
-        graphHost.Children.Add(_absBadge);
-        Grid.SetColumn(graphHost, 0);
-        mainGrid.Children.Add(graphHost);
+        _graphZone.Children.Add(_absBadge);
+        _mainRow.Children.Add(_graphZone);
 
-        AddDivider(mainGrid, 1);
+        _divAfterGraph = MakeVerticalDivider();
+        _mainRow.Children.Add(_divAfterGraph);
 
-        // Zone 2: Pedals
-        var pedalsStack = new StackPanel
+        // Zone B: Vertical Pedal Bars
+        _pedalsZone = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Margin = new Thickness(7, 6, 7, 5),
+            Margin = new Thickness(8, 6, 8, 5),
             VerticalAlignment = VerticalAlignment.Center
         };
         (_clutchCol, _clutchFill, _clutchPct) = MakePedalColumn(ClutchBrush);
@@ -173,31 +166,35 @@ public sealed class InputsWindow : OverlayWindowBase
         _throttleFill = throttleFill;
         _throttlePct = throttlePct;
 
-        pedalsStack.Children.Add(_clutchCol);
-        pedalsStack.Children.Add(brakeCol);
-        pedalsStack.Children.Add(throttleCol);
-        Grid.SetColumn(pedalsStack, 2);
-        mainGrid.Children.Add(pedalsStack);
+        _pedalsZone.Children.Add(_clutchCol);
+        _pedalsZone.Children.Add(brakeCol);
+        _pedalsZone.Children.Add(throttleCol);
+        _mainRow.Children.Add(_pedalsZone);
 
-        AddDivider(mainGrid, 3);
+        _divAfterPedals = MakeVerticalDivider();
+        _mainRow.Children.Add(_divAfterPedals);
 
-        // Zone 3: Gear / Speed / RPM
-        var cluster = new Grid { Margin = new Thickness(4, 3, 4, 4) };
-        cluster.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
-        cluster.RowDefinitions.Add(new RowDefinition { Height = new GridLength(25) });
-        cluster.RowDefinitions.Add(new RowDefinition { Height = new GridLength(17) });
+        // Zone C: Large Crisp Gear / Speed / RPM Cluster
+        _gearZone = new Grid
+        {
+            MinWidth = 96,
+            Margin = new Thickness(8, 2, 8, 3)
+        };
+        _gearZone.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
+        _gearZone.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
+        _gearZone.RowDefinitions.Add(new RowDefinition { Height = new GridLength(18) });
 
         _gearText = new TextBlock
         {
             Text = "N",
-            FontSize = 38,
+            FontSize = 42,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
         Grid.SetRow(_gearText, 0);
-        cluster.Children.Add(_gearText);
+        _gearZone.Children.Add(_gearText);
 
         var speedRow = new StackPanel
         {
@@ -208,86 +205,84 @@ public sealed class InputsWindow : OverlayWindowBase
         _speedText = new TextBlock
         {
             Text = "0",
-            FontSize = 17,
-            FontWeight = FontWeights.SemiBold,
+            FontSize = 20,
+            FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
             VerticalAlignment = VerticalAlignment.Bottom
         };
         _unitText = new TextBlock
         {
             Text = "km/h",
-            FontSize = 9.5,
-            FontWeight = FontWeights.Medium,
+            FontSize = 10,
+            FontWeight = FontWeights.SemiBold,
             Foreground = TextMuted,
-            Margin = new Thickness(3, 0, 0, 2),
+            Margin = new Thickness(3, 0, 0, 3),
             VerticalAlignment = VerticalAlignment.Bottom
         };
         speedRow.Children.Add(_speedText);
         speedRow.Children.Add(_unitText);
         Grid.SetRow(speedRow, 1);
-        cluster.Children.Add(speedRow);
+        _gearZone.Children.Add(speedRow);
 
         _rpmText = new TextBlock
         {
             Text = "0 rpm",
-            FontSize = 10,
+            FontSize = 11,
+            FontWeight = FontWeights.SemiBold,
             Foreground = TextMuted,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
         Grid.SetRow(_rpmText, 2);
-        cluster.Children.Add(_rpmText);
+        _gearZone.Children.Add(_rpmText);
+        _mainRow.Children.Add(_gearZone);
 
-        Grid.SetColumn(cluster, 4);
-        mainGrid.Children.Add(cluster);
+        _divAfterGear = MakeVerticalDivider();
+        _mainRow.Children.Add(_divAfterGear);
 
-        _wheelDivider = new Border { Width = 1, Background = Hairline, VerticalAlignment = VerticalAlignment.Stretch };
-        Grid.SetColumn(_wheelDivider, 5);
-        mainGrid.Children.Add(_wheelDivider);
-
-        // Zone 4: Steering Wheel
-        _wheelStack = new StackPanel
+        // Zone D: Steering Wheel Visual
+        _wheelZone = new StackPanel
         {
+            Width = 84,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center
         };
-        _wheel = new SteeringWheelVisual { Width = 58, Height = 58 };
+        _wheel = new SteeringWheelVisual { Width = 60, Height = 60 };
         _steerDegText = new TextBlock
         {
             Text = "0°",
-            FontSize = 10.5,
-            Foreground = TextMuted,
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = TextSoft,
             HorizontalAlignment = HorizontalAlignment.Center,
             Margin = new Thickness(0, 3, 0, 0)
         };
-        _wheelStack.Children.Add(_wheel);
-        _wheelStack.Children.Add(_steerDegText);
-        Grid.SetColumn(_wheelStack, 6);
-        mainGrid.Children.Add(_wheelStack);
+        _wheelZone.Children.Add(_wheel);
+        _wheelZone.Children.Add(_steerDegText);
+        _mainRow.Children.Add(_wheelZone);
 
-        rootStack.Children.Add(mainGrid);
+        rootStack.Children.Add(_mainRow);
 
-        // Racelab Bottom Strip: Electronics (BB / TC / ABS) + Live Delta Bar
-        var bottomGrid = new Grid { Height = 24, Margin = new Thickness(8, 0, 8, 0) };
-        bottomGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        bottomGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        // 3) Bottom Strip A: Electronics (BB/TC/ABS) + Live Delta Bar
+        var elecDeltaGrid = new Grid { Height = 26, Margin = new Thickness(8, 0, 8, 0) };
+        elecDeltaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        elecDeltaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         _elecPanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        _bbText = MakeElecPill("BB --", "#F87171");
-        _tcText = MakeElecPill("TC --", "#38BDF8");
-        _absSetText = MakeElecPill("ABS --", "#FBBF24");
+        _bbText = MakeElecPill("BB --", "#FF6B81");
+        _tcText = MakeElecPill("TC --", "#67E8F9");
+        _absSetText = MakeElecPill("ABS --", "#FCD34D");
         _elecPanel.Children.Add(_bbText);
         _elecPanel.Children.Add(_tcText);
         _elecPanel.Children.Add(_absSetText);
         Grid.SetColumn(_elecPanel, 0);
-        bottomGrid.Children.Add(_elecPanel);
+        elecDeltaGrid.Children.Add(_elecPanel);
 
-        // Compact Delta Bar + numeric readout
         _deltaPanel = new Grid { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
-        _deltaPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(96) });
-        _deltaPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(56) });
+        _deltaPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
+        _deltaPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
 
-        var barBg = new Grid { Height = 6, Background = FormatHelpers.GetFrozenBrush("#20FFFFFF"), VerticalAlignment = VerticalAlignment.Center };
+        var barBg = new Grid { Height = 7, Background = FormatHelpers.GetFrozenBrush("#28FFFFFF"), VerticalAlignment = VerticalAlignment.Center };
         barBg.ColumnDefinitions.Add(new ColumnDefinition());
         barBg.ColumnDefinitions.Add(new ColumnDefinition());
         _deltaBarLeft = new Border { Background = DeltaGreen, HorizontalAlignment = HorizontalAlignment.Right, Width = 0, CornerRadius = new CornerRadius(1, 0, 0, 1) };
@@ -296,8 +291,7 @@ public sealed class InputsWindow : OverlayWindowBase
         Grid.SetColumn(_deltaBarRight, 1);
         barBg.Children.Add(_deltaBarLeft);
         barBg.Children.Add(_deltaBarRight);
-        // Center tick
-        var centerTick = new Border { Width = 1, Background = FormatHelpers.GetFrozenBrush("#66FFFFFF"), HorizontalAlignment = HorizontalAlignment.Center };
+        var centerTick = new Border { Width = 1, Background = FormatHelpers.GetFrozenBrush("#88FFFFFF"), HorizontalAlignment = HorizontalAlignment.Center };
         Grid.SetColumnSpan(centerTick, 2);
         barBg.Children.Add(centerTick);
         Grid.SetColumn(barBg, 0);
@@ -306,9 +300,9 @@ public sealed class InputsWindow : OverlayWindowBase
         _deltaText = new TextBlock
         {
             Text = "+0.00",
-            FontSize = 11,
+            FontSize = 12.5,
             FontWeight = FontWeights.Bold,
-            Foreground = TextMuted,
+            Foreground = TextSoft,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -316,25 +310,126 @@ public sealed class InputsWindow : OverlayWindowBase
         _deltaPanel.Children.Add(_deltaText);
 
         Grid.SetColumn(_deltaPanel, 1);
-        bottomGrid.Children.Add(_deltaPanel);
+        elecDeltaGrid.Children.Add(_deltaPanel);
 
-        _bottomStripHost = new Border
+        _elecDeltaHost = new Border
         {
             BorderBrush = Hairline,
             BorderThickness = new Thickness(0, 1, 0, 0),
-            Child = bottomGrid
+            Child = elecDeltaGrid
         };
-        rootStack.Children.Add(_bottomStripHost);
+        rootStack.Children.Add(_elecDeltaHost);
+
+        // 4) Bottom Strip B: Racelab 4-Corner Min Speed Strip (Your Min vs Session Fastest)
+        var cornersGrid = new Grid { Margin = new Thickness(6, 5, 6, 5) };
+        for (int i = 0; i < 4; i++)
+        {
+            cornersGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var slot = CreateCornerSlot();
+            _cornerSlots[i] = slot;
+            Grid.SetColumn(slot.Box, i);
+            cornersGrid.Children.Add(slot.Box);
+        }
+
+        _cornersHost = new Border
+        {
+            BorderBrush = Hairline,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Child = cornersGrid
+        };
+        rootStack.Children.Add(_cornersHost);
 
         _outerBorder.Child = rootStack;
         AttachOverlayRoot(_outerBorder, "Inputs");
     }
 
+    private static CornerSlotVisual CreateCornerSlot()
+    {
+        var s = new CornerSlotVisual();
+
+        var g = new Grid();
+        g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        s.Label = new TextBlock
+        {
+            Text = "T-",
+            FontSize = 9.5,
+            FontWeight = FontWeights.Bold,
+            Foreground = TextMuted,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetRow(s.Label, 0);
+        Grid.SetColumn(s.Label, 0);
+        g.Children.Add(s.Label);
+
+        s.Delta = new TextBlock
+        {
+            Text = "",
+            FontSize = 10.5,
+            FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetRow(s.Delta, 0);
+        Grid.SetColumn(s.Delta, 1);
+        g.Children.Add(s.Delta);
+
+        s.PlayerSpeed = new TextBlock
+        {
+            Text = "--",
+            FontSize = 16,
+            FontWeight = FontWeights.Bold,
+            Foreground = TextWhite,
+            VerticalAlignment = VerticalAlignment.Bottom
+        };
+        Grid.SetRow(s.PlayerSpeed, 1);
+        Grid.SetColumn(s.PlayerSpeed, 0);
+        g.Children.Add(s.PlayerSpeed);
+
+        s.FastestRef = new TextBlock
+        {
+            Text = "/--",
+            FontSize = 11.5,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = TextMuted,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(3, 0, 0, 1)
+        };
+        Grid.SetRow(s.FastestRef, 1);
+        Grid.SetColumn(s.FastestRef, 1);
+        g.Children.Add(s.FastestRef);
+
+        s.Box = new Border
+        {
+            Background = CornerIdleBg,
+            BorderBrush = FormatHelpers.GetFrozenBrush("#1EFFFFFF"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(6, 3, 6, 3),
+            Margin = new Thickness(2, 0, 2, 0),
+            MinWidth = 68,
+            Child = g
+        };
+
+        return s;
+    }
+
+    private static Border MakeVerticalDivider() => new()
+    {
+        Width = 1,
+        Background = Hairline,
+        VerticalAlignment = VerticalAlignment.Stretch
+    };
+
     private static TextBlock MakeElecPill(string init, string colorHex) => new()
     {
         Text = init,
-        FontSize = 10.5,
-        FontWeight = FontWeights.SemiBold,
+        FontSize = 11.5,
+        FontWeight = FontWeights.Bold,
         Foreground = FormatHelpers.GetFrozenBrush(colorHex),
         Margin = new Thickness(0, 0, 12, 0),
         VerticalAlignment = VerticalAlignment.Center
@@ -348,48 +443,78 @@ public sealed class InputsWindow : OverlayWindowBase
         _graph.SetBackdropOpacity(Settings.BackgroundOpacity);
         _graph.ShowClutch = Settings.ShowInputsClutch;
         _graph.WindowSeconds = Settings.InputsGraphSeconds;
+        _graphZone.Width = Math.Clamp(Settings.InputsGraphWidth, 140.0, 460.0);
 
         var uiFont = GetUiFont();
         var monoFont = GetMonoFont();
 
         _clutchPct.FontFamily = monoFont;
+        _clutchPct.FontSize = FontSz(11);
         _brakePct.FontFamily = monoFont;
+        _brakePct.FontSize = FontSz(11);
         _throttlePct.FontFamily = monoFont;
-        _gearText.FontFamily = monoFont;
-        _speedText.FontFamily = monoFont;
-        _unitText.FontFamily = uiFont;
-        _rpmText.FontFamily = monoFont;
-        _steerDegText.FontFamily = monoFont;
-        _bbText.FontFamily = monoFont;
-        _tcText.FontFamily = monoFont;
-        _absSetText.FontFamily = monoFont;
-        _deltaText.FontFamily = monoFont;
-        _apexText.FontFamily = monoFont;
+        _throttlePct.FontSize = FontSz(11);
 
-        if (!Settings.ShowInputsCornerSpeed)
-            _apexBadge.Visibility = Visibility.Collapsed;
+        _gearText.FontFamily = monoFont;
+        _gearText.FontSize = FontSz(42);
+        _speedText.FontFamily = monoFont;
+        _speedText.FontSize = FontSz(20);
+        _unitText.FontFamily = uiFont;
+        _unitText.FontSize = FontSz(10);
+        _rpmText.FontFamily = monoFont;
+        _rpmText.FontSize = FontSz(11);
+        _steerDegText.FontFamily = monoFont;
+        _steerDegText.FontSize = FontSz(12);
+
+        _bbText.FontFamily = monoFont;
+        _bbText.FontSize = FontSz(11.5);
+        _tcText.FontFamily = monoFont;
+        _tcText.FontSize = FontSz(11.5);
+        _absSetText.FontFamily = monoFont;
+        _absSetText.FontSize = FontSz(11.5);
+        _deltaText.FontFamily = monoFont;
+        _deltaText.FontSize = FontSz(12.5);
+
+        foreach (var slot in _cornerSlots)
+        {
+            slot.Label.FontFamily = uiFont;
+            slot.Label.FontSize = FontSz(9.5);
+            slot.Delta.FontFamily = monoFont;
+            slot.Delta.FontSize = FontSz(10.5);
+            slot.PlayerSpeed.FontFamily = monoFont;
+            slot.PlayerSpeed.FontSize = FontSz(16);
+            slot.FastestRef.FontFamily = monoFont;
+            slot.FastestRef.FontSize = FontSz(11.5);
+        }
+
+        // 100% Modular visibility + clean divider management
+        bool showGraph = Settings.ShowInputsGraph;
+        bool showPedals = Settings.ShowInputsPedalBars;
+        bool showGear = Settings.ShowInputsGearCluster;
+        bool showWheel = Settings.ShowInputsSteering;
 
         _shiftRowHost.Visibility = Settings.ShowInputsShiftBar ? Visibility.Visible : Visibility.Collapsed;
+        _graphZone.Visibility = showGraph ? Visibility.Visible : Visibility.Collapsed;
+        _pedalsZone.Visibility = showPedals ? Visibility.Visible : Visibility.Collapsed;
         _clutchCol.Visibility = Settings.ShowInputsClutch ? Visibility.Visible : Visibility.Collapsed;
+        _gearZone.Visibility = showGear ? Visibility.Visible : Visibility.Collapsed;
+        _wheelZone.Visibility = showWheel ? Visibility.Visible : Visibility.Collapsed;
 
-        bool showWheel = Settings.ShowInputsSteering;
-        _wheelDividerCol.Width = new GridLength(showWheel ? 1 : 0);
-        _wheelCol.Width = new GridLength(showWheel ? 82 : 0);
-        _wheelDivider.Visibility = showWheel ? Visibility.Visible : Visibility.Collapsed;
-        _wheelStack.Visibility = showWheel ? Visibility.Visible : Visibility.Collapsed;
+        // Show dividers only when something is visible on BOTH sides
+        _divAfterGraph.Visibility = (showGraph && (showPedals || showGear || showWheel)) ? Visibility.Visible : Visibility.Collapsed;
+        _divAfterPedals.Visibility = (showPedals && (showGear || showWheel)) ? Visibility.Visible : Visibility.Collapsed;
+        _divAfterGear.Visibility = (showGear && showWheel) ? Visibility.Visible : Visibility.Collapsed;
+
+        bool anyMainZone = showGraph || showPedals || showGear || showWheel;
+        _mainRow.Visibility = anyMainZone ? Visibility.Visible : Visibility.Collapsed;
 
         _elecPanel.Visibility = Settings.ShowInputsElectronics ? Visibility.Visible : Visibility.Collapsed;
         _deltaPanel.Visibility = Settings.ShowInputsDeltaBar ? Visibility.Visible : Visibility.Collapsed;
-        _bottomStripHost.Visibility = (Settings.ShowInputsElectronics || Settings.ShowInputsDeltaBar)
+        _elecDeltaHost.Visibility = (Settings.ShowInputsElectronics || Settings.ShowInputsDeltaBar)
             ? Visibility.Visible
             : Visibility.Collapsed;
-    }
 
-    private static void AddDivider(Grid g, int col)
-    {
-        var d = new Border { Width = 1, Background = Hairline, VerticalAlignment = VerticalAlignment.Stretch };
-        Grid.SetColumn(d, col);
-        g.Children.Add(d);
+        _cornersHost.Visibility = Settings.ShowInputsCornerSpeed ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private static (StackPanel Col, Border Fill, TextBlock Label) MakePedalColumn(Brush fillBrush)
@@ -398,10 +523,10 @@ public sealed class InputsWindow : OverlayWindowBase
 
         var track = new Border
         {
-            Width = 14,
+            Width = 15,
             Height = PedalBarHeight,
-            Background = FormatHelpers.GetFrozenBrush("#18FFFFFF"),
-            BorderBrush = FormatHelpers.GetFrozenBrush("#22FFFFFF"),
+            Background = FormatHelpers.GetFrozenBrush("#1EFFFFFF"),
+            BorderBrush = FormatHelpers.GetFrozenBrush("#2CFFFFFF"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(2)
         };
@@ -418,11 +543,12 @@ public sealed class InputsWindow : OverlayWindowBase
         var pct = new TextBlock
         {
             Text = "0",
-            FontSize = 9.5,
-            Foreground = TextMuted,
+            FontSize = 11,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = TextSoft,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 3, 0, 0),
-            Width = 22,
+            Margin = new Thickness(0, 2, 0, 0),
+            Width = 24,
             TextAlignment = TextAlignment.Center
         };
 
@@ -435,28 +561,37 @@ public sealed class InputsWindow : OverlayWindowBase
     {
         var inp = snap.Inputs;
 
-        _graph.PushSample(inp.Throttle, inp.Brake, inp.Clutch, inp.AbsActive);
-        _absBadge.Visibility = inp.AbsActive ? Visibility.Visible : Visibility.Collapsed;
-
-        _clutchFill.Height = Math.Round(inp.Clutch * (PedalBarHeight - 2));
-        _brakeFill.Height = Math.Round(inp.Brake * (PedalBarHeight - 2));
-        _throttleFill.Height = Math.Round(inp.Throttle * (PedalBarHeight - 2));
-
-        _clutchPct.Text = ((int)Math.Round(inp.Clutch * 100)).ToString();
-        _brakePct.Text = ((int)Math.Round(inp.Brake * 100)).ToString();
-        _throttlePct.Text = ((int)Math.Round(inp.Throttle * 100)).ToString();
-
-        _gearText.Text = inp.Gear switch
+        if (Settings.ShowInputsGraph)
         {
-            -1 => "R",
-            0 => "N",
-            _ => inp.Gear.ToString()
-        };
+            _graph.PushSample(inp.Throttle, inp.Brake, inp.Clutch, inp.AbsActive);
+            _absBadge.Visibility = inp.AbsActive ? Visibility.Visible : Visibility.Collapsed;
+        }
 
-        float speed = Settings.UseImperialUnits ? inp.SpeedMs * 2.236936f : inp.SpeedMs * 3.6f;
-        _speedText.Text = ((int)Math.Round(speed)).ToString();
-        _unitText.Text = Settings.UseImperialUnits ? "mph" : "km/h";
-        _rpmText.Text = $"{(int)Math.Round(inp.Rpm)} rpm";
+        if (Settings.ShowInputsPedalBars)
+        {
+            _clutchFill.Height = Math.Round(inp.Clutch * (PedalBarHeight - 2));
+            _brakeFill.Height = Math.Round(inp.Brake * (PedalBarHeight - 2));
+            _throttleFill.Height = Math.Round(inp.Throttle * (PedalBarHeight - 2));
+
+            _clutchPct.Text = ((int)Math.Round(inp.Clutch * 100)).ToString();
+            _brakePct.Text = ((int)Math.Round(inp.Brake * 100)).ToString();
+            _throttlePct.Text = ((int)Math.Round(inp.Throttle * 100)).ToString();
+        }
+
+        if (Settings.ShowInputsGearCluster)
+        {
+            _gearText.Text = inp.Gear switch
+            {
+                -1 => "R",
+                0 => "N",
+                _ => inp.Gear.ToString()
+            };
+
+            float speed = Settings.UseImperialUnits ? inp.SpeedMs * 2.236936f : inp.SpeedMs * 3.6f;
+            _speedText.Text = ((int)Math.Round(speed)).ToString();
+            _unitText.Text = Settings.UseImperialUnits ? "mph" : "km/h";
+            _rpmText.Text = $"{(int)Math.Round(inp.Rpm)} rpm";
+        }
 
         if (Settings.ShowInputsShiftBar)
             _shiftBar.UpdateRpm(inp.Rpm, inp.ShiftFirstRpm, inp.ShiftOptimalRpm, inp.ShiftBlinkRpm, inp.ShiftPct);
@@ -467,8 +602,6 @@ public sealed class InputsWindow : OverlayWindowBase
             int steerDeg = (int)Math.Round(-inp.SteeringAngleRad * (180.0 / Math.PI));
             _steerDegText.Text = $"{steerDeg}°";
         }
-
-        UpdateCornerMinSpeed(inp);
 
         if (Settings.ShowInputsElectronics)
         {
@@ -489,10 +622,10 @@ public sealed class InputsWindow : OverlayWindowBase
             else
             {
                 float d = inp.LapDeltaToBestSec;
-                double frac = Math.Clamp(Math.Abs(d) / 1.0, 0.0, 1.0); // full bar at +/- 1.0s
+                double frac = Math.Clamp(Math.Abs(d) / 1.0, 0.0, 1.0);
                 if (d <= 0f)
                 {
-                    _deltaBarLeft.Width = Math.Round(frac * 48.0);
+                    _deltaBarLeft.Width = Math.Round(frac * 45.0);
                     _deltaBarRight.Width = 0;
                     _deltaText.Text = $"{d:0.00}";
                     _deltaText.Foreground = DeltaGreen;
@@ -500,94 +633,62 @@ public sealed class InputsWindow : OverlayWindowBase
                 else
                 {
                     _deltaBarLeft.Width = 0;
-                    _deltaBarRight.Width = Math.Round(frac * 48.0);
+                    _deltaBarRight.Width = Math.Round(frac * 45.0);
                     _deltaText.Text = $"+{d:0.00}";
                     _deltaText.Foreground = DeltaRed;
                 }
             }
         }
+
+        if (Settings.ShowInputsCornerSpeed)
+            UpdateCornerStrip(inp);
     }
 
-    private void UpdateCornerMinSpeed(InputTelemetry inp)
+    private void UpdateCornerStrip(InputTelemetry inp)
     {
-        if (!Settings.ShowInputsCornerSpeed)
-        {
-            _apexBadge.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        long nowMs = Environment.TickCount64;
-        float speedMs = inp.SpeedMs;
-        float steerDegAbs = Math.Abs(inp.SteeringAngleRad * (180f / (float)Math.PI));
-
-        // Track recent straightaway peak speed
-        if (speedMs > _recentMaxSpeedMs)
-            _recentMaxSpeedMs = speedMs;
-        else
-            _recentMaxSpeedMs = Math.Max(speedMs, _recentMaxSpeedMs - 0.05f);
-
-        // Ignore stationary / pit crawling below 20 km/h (~5.5 m/s)
-        if (speedMs < 5.5f)
-        {
-            _inCorner = false;
-            _currentCornerMinMs = float.MaxValue;
-            return;
-        }
-
-        bool brakingOrSlowingCorner = inp.Brake > 0.08f || (steerDegAbs > 24f && speedMs < _recentMaxSpeedMs - 2.5f);
-
-        if (!_inCorner)
-        {
-            if (brakingOrSlowingCorner)
-            {
-                _inCorner = true;
-                _currentCornerMinMs = speedMs;
-            }
-        }
-        else
-        {
-            if (speedMs < _currentCornerMinMs)
-                _currentCornerMinMs = speedMs;
-
-            // Lock apex speed once driver releases brake and accelerates cleanly out of apex
-            bool exiting = inp.Brake < 0.03f && inp.Throttle > 0.25f && speedMs > _currentCornerMinMs + 1.2f;
-            if (exiting)
-            {
-                _lastApexSpeedMs = _currentCornerMinMs;
-                _lastApexLockMs = nowMs;
-                _inCorner = false;
-                _recentMaxSpeedMs = speedMs;
-            }
-        }
-
-        float displayMs = _inCorner ? _currentCornerMinMs : _lastApexSpeedMs;
-        if (displayMs <= 0.1f || displayMs > 200f)
-        {
-            _apexBadge.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        _apexBadge.Visibility = Visibility.Visible;
         float conv = Settings.UseImperialUnits ? 2.236936f : 3.6f;
-        string unit = Settings.UseImperialUnits ? "mph" : "km/h";
-        int shown = (int)Math.Round(displayMs * conv);
-        _apexText.Text = $"MIN {shown} {unit}";
+        var list = inp.RecentCorners;
 
-        bool freshLock = !_inCorner && (nowMs - _lastApexLockMs) < 5500;
-        if (_inCorner)
+        for (int i = 0; i < 4; i++)
         {
-            _apexBadge.BorderBrush = ClutchBrush;
-            _apexText.Foreground = ClutchBrush;
-        }
-        else if (freshLock)
-        {
-            _apexBadge.BorderBrush = DeltaGreen;
-            _apexText.Foreground = TextWhite;
-        }
-        else
-        {
-            _apexBadge.BorderBrush = FormatHelpers.GetFrozenBrush("#33FFFFFF");
-            _apexText.Foreground = TextMuted;
+            var slot = _cornerSlots[i];
+            if (i >= list.Count)
+            {
+                slot.Box.Background = CornerIdleBg;
+                slot.Box.BorderBrush = FormatHelpers.GetFrozenBrush("#18FFFFFF");
+                slot.Label.Text = $"C{i + 1}";
+                slot.Label.Foreground = TextMuted;
+                slot.PlayerSpeed.Text = "--";
+                slot.PlayerSpeed.Foreground = TextMuted;
+                slot.FastestRef.Text = "";
+                slot.Delta.Text = "";
+                continue;
+            }
+
+            var rec = list[i];
+            int pSpd = (int)Math.Round(rec.PlayerMinMs * conv);
+            int fSpd = (int)Math.Round(rec.SessionFastestMinMs * conv);
+            int diff = pSpd - fSpd;
+
+            slot.Label.Text = rec.Label;
+            slot.Label.Foreground = rec.IsLiveCorner ? ClutchBrush : TextMuted;
+            slot.Box.Background = rec.IsLiveCorner ? CornerLiveBg : CornerIdleBg;
+            slot.Box.BorderBrush = rec.IsLiveCorner ? ClutchBrush : FormatHelpers.GetFrozenBrush("#24FFFFFF");
+
+            slot.PlayerSpeed.Text = pSpd.ToString();
+            slot.PlayerSpeed.Foreground = rec.IsLiveCorner ? ClutchBrush : TextWhite;
+
+            if (rec.HasFastestRef && fSpd > 10)
+            {
+                slot.FastestRef.Text = $"/{fSpd}";
+                slot.Delta.Text = diff > 0 ? $"+{diff}" : diff.ToString();
+                slot.Delta.Foreground = diff >= 0 ? DeltaGreen : DeltaRed;
+            }
+            else
+            {
+                slot.FastestRef.Text = "";
+                slot.Delta.Text = "";
+            }
         }
     }
 }

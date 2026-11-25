@@ -218,7 +218,21 @@ public sealed class DemoTelemetryProvider
                 TractionControl = 4,
                 AbsSetting = 3,
                 LapDeltaToBestSec = (float)(Math.Sin(_simTime * 0.45) * 0.34 - 0.08),
-                HasLapDelta = true
+                HasLapDelta = true,
+                RecentCorners = new List<CornerSpeedRecord>
+                {
+                    new() { Label = "T1",  PlayerMinMs = 68f / 3.6f, SessionFastestMinMs = 71f / 3.6f, HasFastestRef = true },
+                    new() { Label = "T7",  PlayerMinMs = 96f / 3.6f, SessionFastestMinMs = 94f / 3.6f, HasFastestRef = true },
+                    new() { Label = "T10", PlayerMinMs = 86f / 3.6f, SessionFastestMinMs = 89f / 3.6f, HasFastestRef = true },
+                    new()
+                    {
+                        Label = phase is >= 0.30 and < 0.65 ? "NOW" : "T18",
+                        PlayerMinMs = (phase is >= 0.30 and < 0.65 ? Math.Min(speedKmh, 140f) : 94f) / 3.6f,
+                        SessionFastestMinMs = 96f / 3.6f,
+                        HasFastestRef = true,
+                        IsLiveCorner = phase is >= 0.30 and < 0.65
+                    }
+                }
             },
             Fuel = new FuelTelemetry
             {

@@ -297,6 +297,18 @@
                                         <ComboBox x:Name="MonoFontCombo" Style="{StaticResource DarkComboBox}" SelectionChanged="FontCombo_SelectionChanged" />
                                     </StackPanel>
                                 </Grid>
+
+                                <Grid Margin="0,14,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Margin="0,0,0,4">
+                                        <TextBlock Text="Размер шрифта внутри виджетов (без раздувания окон)" FontSize="12" Foreground="#FFE2E8F0" />
+                                        <TextBlock x:Name="HudFontScaleVal" Text="105%" FontFamily="{StaticResource HudMonoFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FF60A5FA" HorizontalAlignment="Right" />
+                                    </Grid>
+                                    <Slider x:Name="HudFontScaleSlider" Grid.Row="1" Style="{StaticResource CleanSlider}" Minimum="0.80" Maximum="1.35" SmallChange="0.05" LargeChange="0.10" ValueChanged="HudFontScale_ValueChanged" />
+                                </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -306,17 +318,23 @@
                 <ScrollViewer x:Name="PageHudPrefs" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,4,22,16" Visibility="Collapsed">
                     <StackPanel>
                         <!-- Relative & Standings -->
-                        <TextBlock Text="RELATIVE И STANDINGS (ФИШКИ RACELAB)" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="RELATIVE И STANDINGS (МОДУЛИ И ФИШКИ RACELAB)" Style="{StaticResource SectionTitle}" />
                         <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,10" Margin="0,0,0,14">
                             <StackPanel>
                                 <CheckBox x:Name="ShowBrandIconsCheck" Style="{StaticResource CleanToggle}" Content="Показывать векторные иконки марок машин (Porsche, Ferrari, BMW и др.)" Margin="0,4" Click="PrefsChanged_Click" />
-                                <CheckBox x:Name="RelShowPaceCheck" Style="{StaticResource CleanToggle}" Content="Relative: показывать разницу темпа соперника относительно тебя (±0.4s)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="RelShowHeaderCheck" Style="{StaticResource CleanToggle}" Content="Relative: показывать верхнюю шапку (SOF, инциденты, темп., флаг)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="RelShowNumCheck" Style="{StaticResource CleanToggle}" Content="Relative: показывать номер машины (#)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="RelShowPaceCheck" Style="{StaticResource CleanToggle}" Content="Relative: показывать разницу темпа соперника относительно тебя (▲/▼)" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="RelShowIrCheck" Style="{StaticResource CleanToggle}" Content="Relative: показывать iRating" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="RelShowLicCheck" Style="{StaticResource CleanToggle}" Content="Relative: показывать лицензию и Safety Rating" Margin="0,4" Click="PrefsChanged_Click" />
+                                <Border Height="1" Background="#FF242D3D" Margin="0,6" />
+                                <CheckBox x:Name="StdShowHeaderCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать шапку (трасса, круги, таймер)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="StdShowNumCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать номер машины (#)" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="StdShowPosDeltaCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать отыгранные/потерянные позиции (▲2 / ▼1)" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="StdShowTireCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать тип резины (S / M / H / W / D)" Margin="0,4" Click="PrefsChanged_Click" />
-                                <CheckBox x:Name="StdShowIntervalCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать Interval до машины впереди вместо Gap к лидеру" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="StdShowIrCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать iRating" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="StdShowDeltaIrCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать прогноз ±iR" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="StdShowIntervalCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать Interval до машины впереди вместо Gap к лидеру" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="StdShowLastLapCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать последний круг (фиолетовый = лучший в классе)" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="StdShowPitsCheck" Style="{StaticResource CleanToggle}" Content="Standings: показывать пит-стопы и длину стинта" Margin="0,4" Click="PrefsChanged_Click" />
 
@@ -335,24 +353,51 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Inputs -->
-                        <TextBlock Text="INPUT TELEMETRY" Style="{StaticResource SectionTitle}" />
+                        <!-- Inputs (100% Modular!) -->
+                        <TextBlock Text="INPUT TELEMETRY (МОЖНО УБРАТЬ ЛЮБОЙ БЛОК)" Style="{StaticResource SectionTitle}" />
                         <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,10" Margin="0,0,0,14">
                             <StackPanel>
+                                <CheckBox x:Name="InpShowGraphCheck" Style="{StaticResource CleanToggle}" Content="Показывать живой график педалей (60 Гц)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="InpShowPedalBarsCheck" Style="{StaticResource CleanToggle}" Content="Показывать вертикальные столбики педалей с %" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="InpShowGearCheck" Style="{StaticResource CleanToggle}" Content="Показывать передачу, скорость и RPM" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="InpShowWheelCheck" Style="{StaticResource CleanToggle}" Content="Показывать визуальный руль и градусы" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="InpShowShiftCheck" Style="{StaticResource CleanToggle}" Content="Показывать полосу шифт-лайтов RPM сверху" Margin="0,4" Click="PrefsChanged_Click" />
-                                <CheckBox x:Name="InpShowWheelCheck" Style="{StaticResource CleanToggle}" Content="Показывать визуал угла руля" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="InpShowClutchCheck" Style="{StaticResource CleanToggle}" Content="Показывать педаль и линию сцепления" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="InpShowElecCheck" Style="{StaticResource CleanToggle}" Content="Показывать электронику машины (Brake Bias, TC, ABS)" Margin="0,4" Click="PrefsChanged_Click" />
                                 <CheckBox x:Name="InpShowDeltaCheck" Style="{StaticResource CleanToggle}" Content="Показывать встроенный Delta Bar к лучшему кругу" Margin="0,4" Click="PrefsChanged_Click" />
-                                <CheckBox x:Name="InpShowCornerSpeedCheck" Style="{StaticResource CleanToggle}" Content="Показывать минимальную скорость в повороте (Apex Min Speed)" Margin="0,4" Click="PrefsChanged_Click" />
+                                <CheckBox x:Name="InpShowCornerSpeedCheck" Style="{StaticResource CleanToggle}" Content="Показывать 4 последних поворота (твоя минималка vs лучший в сессии)" Margin="0,4" Click="PrefsChanged_Click" />
 
-                                <Grid Margin="0,10,0,2">
+                                <Grid Margin="0,12,0,4">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <Grid Grid.Row="0" Margin="0,0,0,4">
-                                        <TextBlock Text="Длина графика педалей (в секундах):" FontSize="12.5" Foreground="#FFE2E8F0" VerticalAlignment="Center" />
+                                        <TextBlock Text="Ширина графика педалей (в пикселях):" FontSize="12.5" Foreground="#FFE2E8F0" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="GraphWidthVal" Text="240 px" FontFamily="{StaticResource HudMonoFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FF60A5FA" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                    </Grid>
+                                    <Grid Grid.Row="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Slider x:Name="GraphWidthSlider" Grid.Column="0" Style="{StaticResource CleanSlider}" Minimum="140" Maximum="460" SmallChange="10" LargeChange="20" IsSnapToTickEnabled="True" TickFrequency="10" ValueChanged="GraphWidth_ValueChanged" Margin="0,0,12,0" />
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Button Style="{StaticResource ModernButton}" Content="180" Padding="7,3" Margin="0,0,4,0" Tag="180" Click="GraphWidthPreset_Click" />
+                                            <Button Style="{StaticResource ModernButton}" Content="240" Padding="7,3" Margin="0,0,4,0" Tag="240" Click="GraphWidthPreset_Click" />
+                                            <Button Style="{StaticResource ModernButton}" Content="320" Padding="7,3" Margin="0,0,4,0" Tag="320" Click="GraphWidthPreset_Click" />
+                                            <Button Style="{StaticResource ModernButton}" Content="420" Padding="7,3" Tag="420" Click="GraphWidthPreset_Click" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+
+                                <Grid Margin="0,8,0,2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Margin="0,0,0,4">
+                                        <TextBlock Text="Длина истории графика педалей (в секундах):" FontSize="12.5" Foreground="#FFE2E8F0" VerticalAlignment="Center" />
                                         <TextBlock x:Name="GraphSecondsVal" Text="3.5 сек" FontFamily="{StaticResource HudMonoFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FF60A5FA" HorizontalAlignment="Right" VerticalAlignment="Center" />
                                     </Grid>
                                     <Grid Grid.Row="1">

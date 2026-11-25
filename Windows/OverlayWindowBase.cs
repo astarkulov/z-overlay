@@ -585,6 +585,9 @@ public abstract class OverlayWindowBase : Window
         };
     }
 
+    protected double FontSz(double basePx)
+        => Math.Round(basePx * Math.Clamp(Settings.HudFontScale, 0.80, 1.35), 1);
+
     protected FontFamily GetUiFont()
     {
         string f = string.IsNullOrWhiteSpace(Settings.UiFontFamily) ? "Segoe UI Variable Text" : Settings.UiFontFamily;

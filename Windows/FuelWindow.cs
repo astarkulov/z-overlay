@@ -223,6 +223,21 @@ public sealed class FuelWindow : OverlayWindowBase
         var monoFont = GetMonoFont();
         foreach (var l in _allLabels) l.FontFamily = uiFont;
         foreach (var v in _allValues) v.FontFamily = monoFont;
+
+        _titleText.FontSize = FontSz(11.5);
+        _modeBadgeText.FontSize = FontSz(10.5);
+        _stopsText.FontSize = FontSz(10.5);
+        _fuelLevelVal.FontSize = FontSz(19);
+        _estLapsVal.FontSize = FontSz(19);
+        _raceLapsVal.FontSize = FontSz(19);
+        _lastBurnVal.FontSize = FontSz(14);
+        _avgBurnVal.FontSize = FontSz(14);
+        _maxBurnVal.FontSize = FontSz(14);
+        _minAddVal.FontSize = FontSz(15.5);
+        _targetAddVal.FontSize = FontSz(17.5);
+        _safeAddVal.FontSize = FontSz(15.5);
+        _refuelTimeVal.FontSize = FontSz(11.5);
+        _saveTargetVal.FontSize = FontSz(11.5);
     }
 
     private static TextBlock AddMetric(

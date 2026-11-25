@@ -201,6 +201,35 @@ public partial class HubWindow : Window
         }
     }
 
+    private void GraphWidth_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_syncingUi || _settings == null) return;
+        double val = Math.Round(e.NewValue / 10.0) * 10.0;
+        _settings.InputsGraphWidth = Math.Clamp(val, 140.0, 460.0);
+        GraphWidthVal.Text = $"{(int)_settings.InputsGraphWidth} px";
+        _onSettingsChanged();
+    }
+
+    private void GraphWidthPreset_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string s &&
+            double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out double val))
+        {
+            _settings.InputsGraphWidth = Math.Clamp(val, 140.0, 460.0);
+            SyncUiFromSettings();
+            _onSettingsChanged();
+        }
+    }
+
+    private void HudFontScale_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_syncingUi || _settings == null) return;
+        double val = Math.Round(e.NewValue, 2);
+        _settings.HudFontScale = Math.Clamp(val, 0.80, 1.35);
+        HudFontScaleVal.Text = $"{(int)Math.Round(_settings.HudFontScale * 100)}%";
+        _onSettingsChanged();
+    }
+
     private void UpdateFuelModeButtons()
     {
         var primary = (Style)FindResource("ModernPrimaryButton");
@@ -471,26 +500,44 @@ public partial class HubWindow : Window
             AppBackdropVal.Text = bgText;
 
             ShowBrandIconsCheck.IsChecked = _settings.ShowCarBrandIcons;
+            RelShowHeaderCheck.IsChecked = _settings.ShowRelativeHeader;
+            RelShowNumCheck.IsChecked = _settings.ShowRelativeCarNumber;
             RelShowPaceCheck.IsChecked = _settings.ShowRelativePaceDelta;
             RelShowIrCheck.IsChecked = _settings.ShowRelativeIRating;
             RelShowLicCheck.IsChecked = _settings.ShowRelativeLicense;
+
+            StdShowHeaderCheck.IsChecked = _settings.ShowStandingsHeader;
+            StdShowNumCheck.IsChecked = _settings.ShowStandingsCarNumber;
             StdShowPosDeltaCheck.IsChecked = _settings.ShowStandingsPosDelta;
             StdShowTireCheck.IsChecked = _settings.ShowStandingsTireCompound;
+            StdShowIrCheck.IsChecked = _settings.ShowStandingsIRating;
             StdShowIntervalCheck.IsChecked = _settings.ShowStandingsInterval;
             StdShowDeltaIrCheck.IsChecked = _settings.ShowStandingsDeltaIR;
             StdShowLastLapCheck.IsChecked = _settings.ShowStandingsLastLap;
             StdShowPitsCheck.IsChecked = _settings.ShowStandingsPits;
             StandingsRowsText.Text = _settings.StandingsMaxRows.ToString();
 
+            InpShowGraphCheck.IsChecked = _settings.ShowInputsGraph;
+            InpShowPedalBarsCheck.IsChecked = _settings.ShowInputsPedalBars;
+            InpShowGearCheck.IsChecked = _settings.ShowInputsGearCluster;
             InpShowShiftCheck.IsChecked = _settings.ShowInputsShiftBar;
             InpShowWheelCheck.IsChecked = _settings.ShowInputsSteering;
             InpShowClutchCheck.IsChecked = _settings.ShowInputsClutch;
             InpShowElecCheck.IsChecked = _settings.ShowInputsElectronics;
             InpShowDeltaCheck.IsChecked = _settings.ShowInputsDeltaBar;
             InpShowCornerSpeedCheck.IsChecked = _settings.ShowInputsCornerSpeed;
+
+            double gW = Math.Clamp(_settings.InputsGraphWidth, 140.0, 460.0);
+            GraphWidthSlider.Value = gW;
+            GraphWidthVal.Text = $"{(int)Math.Round(gW)} px";
+
             double gSec = Math.Clamp(_settings.InputsGraphSeconds, 1.0, 12.0);
             GraphSecondsSlider.Value = gSec;
             GraphSecondsVal.Text = $"{gSec:0.0} сек";
+
+            double fs = Math.Clamp(_settings.HudFontScale, 0.80, 1.35);
+            HudFontScaleSlider.Value = fs;
+            HudFontScaleVal.Text = $"{(int)Math.Round(fs * 100)}%";
 
             RadarAutoHideCheck.IsChecked = _settings.RadarAutoHideWhenClear;
             OnlyIRacingFocusCheck.IsChecked = _settings.ShowOnlyWhenIRacingFocused;
@@ -647,16 +694,25 @@ public partial class HubWindow : Window
     private void PrefsChanged_Click(object sender, RoutedEventArgs e)
     {
         _settings.ShowCarBrandIcons = ShowBrandIconsCheck.IsChecked == true;
+        _settings.ShowRelativeHeader = RelShowHeaderCheck.IsChecked == true;
+        _settings.ShowRelativeCarNumber = RelShowNumCheck.IsChecked == true;
         _settings.ShowRelativePaceDelta = RelShowPaceCheck.IsChecked == true;
         _settings.ShowRelativeIRating = RelShowIrCheck.IsChecked == true;
         _settings.ShowRelativeLicense = RelShowLicCheck.IsChecked == true;
+
+        _settings.ShowStandingsHeader = StdShowHeaderCheck.IsChecked == true;
+        _settings.ShowStandingsCarNumber = StdShowNumCheck.IsChecked == true;
         _settings.ShowStandingsPosDelta = StdShowPosDeltaCheck.IsChecked == true;
         _settings.ShowStandingsTireCompound = StdShowTireCheck.IsChecked == true;
+        _settings.ShowStandingsIRating = StdShowIrCheck.IsChecked == true;
         _settings.ShowStandingsInterval = StdShowIntervalCheck.IsChecked == true;
         _settings.ShowStandingsDeltaIR = StdShowDeltaIrCheck.IsChecked == true;
         _settings.ShowStandingsLastLap = StdShowLastLapCheck.IsChecked == true;
         _settings.ShowStandingsPits = StdShowPitsCheck.IsChecked == true;
 
+        _settings.ShowInputsGraph = InpShowGraphCheck.IsChecked == true;
+        _settings.ShowInputsPedalBars = InpShowPedalBarsCheck.IsChecked == true;
+        _settings.ShowInputsGearCluster = InpShowGearCheck.IsChecked == true;
         _settings.ShowInputsShiftBar = InpShowShiftCheck.IsChecked == true;
         _settings.ShowInputsSteering = InpShowWheelCheck.IsChecked == true;
         _settings.ShowInputsClutch = InpShowClutchCheck.IsChecked == true;
