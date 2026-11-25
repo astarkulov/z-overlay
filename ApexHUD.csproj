@@ -10,7 +10,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>ApexHUD</AssemblyName>
     <RootNamespace>ApexHUD</RootNamespace>
-    <Version>1.1.10</Version>
+    <Version>1.1.11</Version>
     <Product>Z-Overlay (ApexHUD) for iRacing</Product>
     <ApplicationIcon>Assets\ApexHUD.ico</ApplicationIcon>
   </PropertyGroup>

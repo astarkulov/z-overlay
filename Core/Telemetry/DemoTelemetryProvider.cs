@@ -171,22 +171,32 @@ public sealed class DemoTelemetryProvider
             BuildDemoGroup(1, "LMP2", "#38BDF8", _cars.Where(c => c.ClassId == 1).ToList())
         };
 
-        // Radar: periodically bring a rival alongside on left/right so user can see radar live!
+        // Radar: cycle Rear Approach (golden dome) -> Car Right -> 3 Wide -> Car Left!
         double radarCycle = _simTime % 10.0;
         var radar = new RadarTelemetry();
-        if (radarCycle is > 2.2 and < 5.6)
+        if (radarCycle is >= 0.4 and < 3.2)
         {
-            float y = (float)Math.Sin((radarCycle - 2.2) / 3.4 * Math.PI) * 5.0f - 2.2f;
+            float dist = (float)(11.0 - ((radarCycle - 0.4) / 2.8) * 8.4);
+            radar.Proximity = CarProximityState.Clear;
+            radar.NearestBehindMeters = Math.Max(2.2f, dist);
+        }
+        else if (radarCycle is >= 3.2 and < 5.6)
+        {
+            float y = (float)(-3.0 + ((radarCycle - 3.2) / 2.4) * 6.0);
             radar.Proximity = CarProximityState.CarRight;
-            radar.NearestAheadMeters = Math.Max(0.4f, y);
             radar.Blips.Add(new RadarBlip { OffsetX = 2.4f, OffsetY = y, ColorHex = "#F5A623" });
         }
-        else if (radarCycle is > 6.4 and < 8.6)
+        else if (radarCycle is >= 5.6 and < 7.6)
         {
-            float y = (float)((radarCycle - 6.4) / 2.2 * 10.0 - 5.0);
+            radar.Proximity = CarProximityState.CarLeftRight;
+            radar.Blips.Add(new RadarBlip { OffsetX = -2.4f, OffsetY = -1.2f, ColorHex = "#38BDF8" });
+            radar.Blips.Add(new RadarBlip { OffsetX = 2.4f, OffsetY = 1.4f, ColorHex = "#F5A623" });
+        }
+        else if (radarCycle is >= 7.6 and < 9.4)
+        {
+            float y = (float)(2.8 - ((radarCycle - 7.6) / 1.8) * 5.6);
             radar.Proximity = CarProximityState.CarLeft;
-            radar.NearestBehindMeters = Math.Abs(y);
-            radar.Blips.Add(new RadarBlip { OffsetX = -2.5f, OffsetY = y, ColorHex = "#38BDF8" });
+            radar.Blips.Add(new RadarBlip { OffsetX = -2.4f, OffsetY = y, ColorHex = "#38BDF8" });
         }
         else
         {

@@ -46,9 +46,11 @@ public static class ScreenshotExporter
         }
         snap.Inputs.LapDeltaToBestSec = -0.24f;
         snap.Inputs.HasLapDelta = true;
-        snap.Radar.Proximity = CarProximityState.CarRight;
+        snap.Radar.Proximity = CarProximityState.CarLeftRight;
+        snap.Radar.NearestBehindMeters = 999f;
         snap.Radar.Blips.Clear();
-        snap.Radar.Blips.Add(new RadarBlip { OffsetX = 2.4f, OffsetY = 0.6f, ColorHex = "#F5A623" });
+        snap.Radar.Blips.Add(new RadarBlip { OffsetX = -2.4f, OffsetY = -1.2f, ColorHex = "#38BDF8" });
+        snap.Radar.Blips.Add(new RadarBlip { OffsetX = 2.4f, OffsetY = 1.4f, ColorHex = "#F5A623" });
 
         relWin.UpdateData(snap);
         stdWin.UpdateData(snap);
@@ -159,21 +161,31 @@ public static class ScreenshotExporter
                 list[5].ClassPosition = 6;
             }
 
-            // Choreograph smooth Radar sweep (CAR RIGHT frames 5..31, CAR LEFT frames 36..60)
+            // Choreograph RaceLab Radar showcase:
+            // Frames 0..22: Car closing from behind (golden semicircle dome rising!)
+            // Frames 23..43: Side-by-side overtake on RIGHT (crimson wing sliding up!)
+            // Frames 44..62: 3-WIDE left+right crimson wings (exact RaceLab hero look!)
             snap.Radar.Blips.Clear();
-            if (f is >= 5 and <= 31)
+            snap.Radar.NearestBehindMeters = 999f;
+            if (f <= 22)
             {
-                float prog = (f - 5) / 26f;
-                float y = -4.2f + prog * 8.4f;
+                float prog = f / 22f;
+                snap.Radar.Proximity = CarProximityState.Clear;
+                snap.Radar.NearestBehindMeters = 12.0f - prog * 9.4f;
+            }
+            else if (f <= 43)
+            {
+                float prog = (f - 23) / 20f;
+                float y = -3.4f + prog * 6.4f;
                 snap.Radar.Proximity = CarProximityState.CarRight;
                 snap.Radar.Blips.Add(new RadarBlip { OffsetX = 2.4f, OffsetY = y, ColorHex = "#F5A623" });
             }
-            else if (f is >= 36 and <= 60)
+            else if (f <= 62)
             {
-                float prog = (f - 36) / 24f;
-                float y = 4.2f - prog * 8.4f;
-                snap.Radar.Proximity = CarProximityState.CarLeft;
-                snap.Radar.Blips.Add(new RadarBlip { OffsetX = -2.4f, OffsetY = y, ColorHex = "#38BDF8" });
+                float prog = (f - 44) / 18f;
+                snap.Radar.Proximity = CarProximityState.CarLeftRight;
+                snap.Radar.Blips.Add(new RadarBlip { OffsetX = -2.4f, OffsetY = -2.2f + prog * 2.4f, ColorHex = "#38BDF8" });
+                snap.Radar.Blips.Add(new RadarBlip { OffsetX = 2.4f, OffsetY = 2.2f - prog * 1.4f, ColorHex = "#F5A623" });
             }
             else
             {

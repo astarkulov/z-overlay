@@ -17,25 +17,25 @@ public sealed class RadarWindow : OverlayWindowBase
     private readonly Border _calloutBadge;
     private readonly TextBlock _calloutText;
 
-    private static readonly SolidColorBrush SlateBg = FormatHelpers.GetFrozenBrush("#D81E293B");
-    private static readonly SolidColorBrush AmberBg = FormatHelpers.GetFrozenBrush("#E0F59E0B");
-    private static readonly SolidColorBrush RedBg = FormatHelpers.GetFrozenBrush("#E6EF4444");
-    private static readonly SolidColorBrush DarkText = FormatHelpers.GetFrozenBrush("#0B0E14");
-    private static readonly SolidColorBrush WhiteText = FormatHelpers.GetFrozenBrush("#F8FAFC");
+    private static readonly SolidColorBrush SlateBg = FormatHelpers.GetFrozenBrush("#E01E2026");
+    private static readonly SolidColorBrush GoldBg = FormatHelpers.GetFrozenBrush("#FFF2B830");
+    private static readonly SolidColorBrush RedBg = FormatHelpers.GetFrozenBrush("#EBDC2626");
+    private static readonly SolidColorBrush DarkText = FormatHelpers.GetFrozenBrush("#FF111318");
+    private static readonly SolidColorBrush WhiteText = FormatHelpers.GetFrozenBrush("#FFF8FAFC");
 
     public RadarWindow(AppSettings settings) : base("Radar", settings)
     {
         var host = new Grid
         {
-            Width = 186,
-            Height = 208,
+            Width = 192,
+            Height = 166,
             Background = Brushes.Transparent
         };
 
         _radar = new RadarCanvas
         {
-            Width = 180,
-            Height = 180,
+            Width = 192,
+            Height = 144,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Top
         };
@@ -44,15 +44,15 @@ public sealed class RadarWindow : OverlayWindowBase
         _calloutText = new TextBlock
         {
             Text = "CLEAR",
-            FontSize = 10.5,
-            FontWeight = FontWeights.Bold,
+            FontSize = 10,
+            FontWeight = FontWeights.ExtraBold,
             Foreground = DarkText
         };
         _calloutBadge = new Border
         {
-            Background = AmberBg,
+            Background = GoldBg,
             CornerRadius = new CornerRadius(3),
-            Padding = new Thickness(8, 2, 8, 2),
+            Padding = new Thickness(7, 1, 7, 1),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Bottom,
             Visibility = Visibility.Collapsed,
@@ -78,10 +78,10 @@ public sealed class RadarWindow : OverlayWindowBase
         switch (r.Proximity)
         {
             case CarProximityState.CarLeft:
-                SetCallout("CAR LEFT", AmberBg, DarkText);
+                SetCallout("CAR LEFT", RedBg, WhiteText);
                 break;
             case CarProximityState.CarRight:
-                SetCallout("CAR RIGHT", AmberBg, DarkText);
+                SetCallout("CAR RIGHT", RedBg, WhiteText);
                 break;
             case CarProximityState.CarLeftRight:
                 SetCallout("3 WIDE", RedBg, WhiteText);
@@ -94,8 +94,8 @@ public sealed class RadarWindow : OverlayWindowBase
                 break;
             default:
                 if (r.NearestBehindMeters < 12f)
-                    SetCallout($"REAR {r.NearestBehindMeters:0.0}m", SlateBg, WhiteText);
-                else if (r.NearestAheadMeters < 12f)
+                    SetCallout($"REAR {r.NearestBehindMeters:0.0}m", GoldBg, DarkText);
+                else if (r.NearestAheadMeters < 10f)
                     SetCallout($"AHEAD {r.NearestAheadMeters:0.0}m", SlateBg, WhiteText);
                 else
                     _calloutBadge.Visibility = Visibility.Collapsed;
