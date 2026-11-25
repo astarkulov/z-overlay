@@ -203,7 +203,7 @@ public sealed class StandingsWindow : OverlayWindowBase
         AddColHeader(_legendGrid, 5, "DRIVER", HorizontalAlignment.Left);
         if (Settings.ShowStandingsTireCompound) AddIconColHeader(_legendGrid, 6, HudIconKind.TireWheel, "", HorizontalAlignment.Center);
         if (Settings.ShowStandingsIRating) AddIconColHeader(_legendGrid, 7, HudIconKind.RatingBar, "iR", HorizontalAlignment.Right);
-        if (Settings.ShowStandingsDeltaIR) AddColHeader(_legendGrid, 8, "±iR", HorizontalAlignment.Right);
+        if (Settings.ShowStandingsDeltaIR && _lastIsRaceSession) AddColHeader(_legendGrid, 8, "±iR", HorizontalAlignment.Right);
         AddIconColHeader(_legendGrid, 9, HudIconKind.Stopwatch, Settings.ShowStandingsInterval ? "INT" : "GAP", HorizontalAlignment.Right);
         if (Settings.ShowStandingsLastLap) AddColHeader(_legendGrid, 10, _lastIsRaceSession ? "LAST" : "BEST", HorizontalAlignment.Right);
         if (Settings.ShowStandingsPits) AddIconColHeader(_legendGrid, 11, HudIconKind.Wrench, "PIT", HorizontalAlignment.Center);
@@ -519,7 +519,7 @@ public sealed class StandingsWindow : OverlayWindowBase
                 TextSoft, FontWeights.SemiBold, HorizontalAlignment.Right);
         }
 
-        if (Settings.ShowStandingsDeltaIR)
+        if (Settings.ShowStandingsDeltaIR && isRaceSession)
         {
             string deltaStr = d.ProjectedIRDelta > 0 ? $"+{d.ProjectedIRDelta}" : d.ProjectedIRDelta.ToString();
             Brush deltaBrush = d.ProjectedIRDelta > 0 ? GainGreen : d.ProjectedIRDelta < 0 ? LossRed : TextMuted;
