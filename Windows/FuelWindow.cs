@@ -43,14 +43,14 @@ public sealed class FuelWindow : OverlayWindowBase
     private readonly TextBlock[] _allLabels;
     private readonly TextBlock[] _allValues;
 
-    private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#16FFFFFF");
-    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#F8FAFC");
-    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#94A3B8");
+    private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#22FFFFFF");
+    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
+    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#CBD5E1");
     private static readonly SolidColorBrush AccentBlue = FormatHelpers.GetFrozenBrush("#3B82F6");
-    private static readonly SolidColorBrush AccentSky = FormatHelpers.GetFrozenBrush("#60A5FA");
-    private static readonly SolidColorBrush AccentAmber = FormatHelpers.GetFrozenBrush("#F59E0B");
-    private static readonly SolidColorBrush OkGreen = FormatHelpers.GetFrozenBrush("#22C55E");
-    private static readonly SolidColorBrush DangerRed = FormatHelpers.GetFrozenBrush("#EF4444");
+    private static readonly SolidColorBrush AccentSky = FormatHelpers.GetFrozenBrush("#7DD3FC");
+    private static readonly SolidColorBrush AccentAmber = FormatHelpers.GetFrozenBrush("#FCD34D");
+    private static readonly SolidColorBrush OkGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
+    private static readonly SolidColorBrush DangerRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
 
     public FuelWindow(AppSettings settings) : base("Fuel", settings)
     {
@@ -65,7 +65,7 @@ public sealed class FuelWindow : OverlayWindowBase
         var labels = new System.Collections.Generic.List<TextBlock>();
         var values = new System.Collections.Generic.List<TextBlock>();
 
-        var root = new StackPanel();
+        var root = new StackPanel { Effect = HudTextShadow };
 
         // Header
         _headerGrid = new Grid { Height = 24 };

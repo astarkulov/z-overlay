@@ -63,15 +63,15 @@ public sealed class InputsWindow : OverlayWindowBase
 
     private const double PedalBarHeight = 68.0;
 
-    private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#1AFFFFFF");
-    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#F8FAFC");
-    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#94A3B8");
+    private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#24FFFFFF");
+    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
+    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#CBD5E1");
     private static readonly SolidColorBrush ClutchBrush = FormatHelpers.GetFrozenBrush("#38BDF8");
-    private static readonly SolidColorBrush BrakeBrush = FormatHelpers.GetFrozenBrush("#EF4444");
-    private static readonly SolidColorBrush ThrottleBrush = FormatHelpers.GetFrozenBrush("#22C55E");
-    private static readonly SolidColorBrush AbsBrush = FormatHelpers.GetFrozenBrush("#F59E0B");
-    private static readonly SolidColorBrush DeltaGreen = FormatHelpers.GetFrozenBrush("#22C55E");
-    private static readonly SolidColorBrush DeltaRed = FormatHelpers.GetFrozenBrush("#EF4444");
+    private static readonly SolidColorBrush BrakeBrush = FormatHelpers.GetFrozenBrush("#FF4757");
+    private static readonly SolidColorBrush ThrottleBrush = FormatHelpers.GetFrozenBrush("#2ED573");
+    private static readonly SolidColorBrush AbsBrush = FormatHelpers.GetFrozenBrush("#FCD34D");
+    private static readonly SolidColorBrush DeltaGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
+    private static readonly SolidColorBrush DeltaRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
 
     public InputsWindow(AppSettings settings) : base("Inputs", settings)
     {
@@ -82,7 +82,7 @@ public sealed class InputsWindow : OverlayWindowBase
             SnapsToDevicePixels = true
         };
 
-        var rootStack = new StackPanel();
+        var rootStack = new StackPanel { Effect = HudTextShadow };
 
         _shiftBar = new ShiftLightBar
         {

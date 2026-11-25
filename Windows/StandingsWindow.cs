@@ -26,17 +26,17 @@ public sealed class StandingsWindow : OverlayWindowBase
     private FontFamily _uiFont = new("Segoe UI Variable Text, Segoe UI");
     private FontFamily _monoFont = new("Cascadia Mono, Consolas");
 
-    private static readonly SolidColorBrush BgPlayer = FormatHelpers.GetFrozenBrush("#383B82F6");
-    private static readonly SolidColorBrush BgRowAlt = FormatHelpers.GetFrozenBrush("#0AFFFFFF");
-    private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#16FFFFFF");
-    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#F8FAFC");
-    private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#CBD5E1");
-    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#94A3B8");
-    private static readonly SolidColorBrush AccentSky = FormatHelpers.GetFrozenBrush("#60A5FA");
-    private static readonly SolidColorBrush GainGreen = FormatHelpers.GetFrozenBrush("#22C55E");
-    private static readonly SolidColorBrush LossRed = FormatHelpers.GetFrozenBrush("#F87171");
-    private static readonly SolidColorBrush PitAmber = FormatHelpers.GetFrozenBrush("#FBBF24");
-    private static readonly SolidColorBrush PurpleBest = FormatHelpers.GetFrozenBrush("#C084FC");
+    private static readonly SolidColorBrush BgPlayer = FormatHelpers.GetFrozenBrush("#4D2563EB");
+    private static readonly SolidColorBrush BgRowAlt = FormatHelpers.GetFrozenBrush("#12FFFFFF");
+    private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#22FFFFFF");
+    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
+    private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#E6EDF7");
+    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#CBD5E1");
+    private static readonly SolidColorBrush AccentSky = FormatHelpers.GetFrozenBrush("#7DD3FC");
+    private static readonly SolidColorBrush GainGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
+    private static readonly SolidColorBrush LossRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
+    private static readonly SolidColorBrush PitAmber = FormatHelpers.GetFrozenBrush("#FCD34D");
+    private static readonly SolidColorBrush PurpleBest = FormatHelpers.GetFrozenBrush("#E879F9");
 
     private int _renderTick;
 
@@ -50,7 +50,7 @@ public sealed class StandingsWindow : OverlayWindowBase
             SnapsToDevicePixels = true
         };
 
-        var stack = new StackPanel();
+        var stack = new StackPanel { Effect = HudTextShadow };
 
         // Header with crisp vector icons (Flag + Track | Session | LapLoop + Laps | Stopwatch + Time)
         _headerGrid = new Grid { Height = 26 };
@@ -213,7 +213,7 @@ public sealed class StandingsWindow : OverlayWindowBase
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(2, 0, 3, 0)
         };
-        sp.Children.Add(new HudMetricIcon(icon, "#64748B", 9.5) { Margin = new Thickness(0, 0, string.IsNullOrEmpty(text) ? 0 : 2, 0) });
+        sp.Children.Add(new HudMetricIcon(icon, "#CBD5E1", 9.5) { Margin = new Thickness(0, 0, string.IsNullOrEmpty(text) ? 0 : 2, 0) });
         if (!string.IsNullOrEmpty(text))
         {
             sp.Children.Add(new TextBlock

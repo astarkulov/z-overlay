@@ -30,22 +30,22 @@ public sealed class RelativeWindow : OverlayWindowBase
     private readonly TextBlock _flagText;
     private readonly List<RowVisual> _rows = new(MaxRowPool);
 
-    private static readonly SolidColorBrush BgPlayer = FormatHelpers.GetFrozenBrush("#383B82F6");
-    private static readonly SolidColorBrush BgRowAlt = FormatHelpers.GetFrozenBrush("#0BFFFFFF");
-    private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#16FFFFFF");
-    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#F8FAFC");
-    private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#CBD5E1");
-    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#94A3B8");
+    private static readonly SolidColorBrush BgPlayer = FormatHelpers.GetFrozenBrush("#4D2563EB");
+    private static readonly SolidColorBrush BgRowAlt = FormatHelpers.GetFrozenBrush("#12FFFFFF");
+    private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#22FFFFFF");
+    private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
+    private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#E6EDF7");
+    private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#CBD5E1");
     private static readonly SolidColorBrush DarkText = FormatHelpers.GetFrozenBrush("#0B0E14");
-    private static readonly SolidColorBrush LapAheadBrush = FormatHelpers.GetFrozenBrush("#FB7185");
-    private static readonly SolidColorBrush LapDownBrush = FormatHelpers.GetFrozenBrush("#38BDF8");
+    private static readonly SolidColorBrush LapAheadBrush = FormatHelpers.GetFrozenBrush("#FF6B81");
+    private static readonly SolidColorBrush LapDownBrush = FormatHelpers.GetFrozenBrush("#67E8F9");
     private static readonly SolidColorBrush PlayerAccent = FormatHelpers.GetFrozenBrush("#93C5FD");
-    private static readonly SolidColorBrush FasterRed = FormatHelpers.GetFrozenBrush("#F87171");
+    private static readonly SolidColorBrush FasterRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
     private static readonly SolidColorBrush SlowerGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
-    private static readonly SolidColorBrush PitTagBg = FormatHelpers.GetFrozenBrush("#38F59E0B");
-    private static readonly SolidColorBrush OutTagBg = FormatHelpers.GetFrozenBrush("#3838BDF8");
-    private static readonly SolidColorBrush OffTagBg = FormatHelpers.GetFrozenBrush("#38EF4444");
-    private static readonly SolidColorBrush AmberText = FormatHelpers.GetFrozenBrush("#FBBF24");
+    private static readonly SolidColorBrush PitTagBg = FormatHelpers.GetFrozenBrush("#55F59E0B");
+    private static readonly SolidColorBrush OutTagBg = FormatHelpers.GetFrozenBrush("#5538BDF8");
+    private static readonly SolidColorBrush OffTagBg = FormatHelpers.GetFrozenBrush("#55EF4444");
+    private static readonly SolidColorBrush AmberText = FormatHelpers.GetFrozenBrush("#FCD34D");
 
     private sealed class RowVisual
     {
@@ -80,7 +80,7 @@ public sealed class RelativeWindow : OverlayWindowBase
             SnapsToDevicePixels = true
         };
 
-        var rootStack = new StackPanel();
+        var rootStack = new StackPanel { Effect = HudTextShadow };
 
         _headerGrid = new Grid { Height = 26 };
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });

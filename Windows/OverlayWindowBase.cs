@@ -5,6 +5,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using ApexHUD.Core.Native;
 using ApexHUD.Core.Settings;
 using Forms = System.Windows.Forms;
@@ -61,6 +62,25 @@ public abstract class OverlayWindowBase : Window
     private static readonly SolidColorBrush FrameSelectedBrush = Freeze(Color.FromArgb(0xFF, 0x60, 0xA5, 0xFA));
     private static readonly SolidColorBrush FrameIdleFill = Freeze(Color.FromArgb(0x0C, 0x38, 0xBD, 0xF8));
     private static readonly SolidColorBrush FrameSelectedFill = Freeze(Color.FromArgb(0x18, 0x3B, 0x82, 0xF6));
+
+    /// <summary>
+    /// Crisp GPU-composited dark outline/shadow so HUD text stays razor-sharp even at 0-30% backdrop over bright sky.
+    /// </summary>
+    protected static readonly DropShadowEffect HudTextShadow = CreateTextShadow();
+
+    private static DropShadowEffect CreateTextShadow()
+    {
+        var eff = new DropShadowEffect
+        {
+            Color = Colors.Black,
+            Direction = 315,
+            ShadowDepth = 1.0,
+            BlurRadius = 2.5,
+            Opacity = 0.92
+        };
+        eff.Freeze();
+        return eff;
+    }
 
     public event Action? LayoutChangedByUser;
     public event Action<string>? WidgetSelected;

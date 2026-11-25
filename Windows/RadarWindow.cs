@@ -56,6 +56,7 @@ public sealed class RadarWindow : OverlayWindowBase
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Bottom,
             Visibility = Visibility.Collapsed,
+            Effect = HudTextShadow,
             Child = _calloutText
         };
         host.Children.Add(_calloutBadge);
