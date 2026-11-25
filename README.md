@@ -81,7 +81,7 @@
 ## Быстрый старт
 
 1. Скачай из раздела **[Releases](https://github.com/astarkulov/z-overlay/releases/latest)** любой удобный вариант (требуется [.NET 6 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)):
-   - **`Z-Overlay-Setup-v1.1.4.exe`** — классический установщик Windows (Inno Setup: ярлык на рабочий стол, опция автозапуска с Windows, чистая деинсталляция);
+   - **`Z-Overlay-Setup-v1.1.5.exe`** — классический установщик Windows (Inno Setup: ярлык на рабочий стол, опция автозапуска с Windows, чистая деинсталляция);
    - **`ApexHUD.exe`** — портативный однофайловый вариант (~395 КБ), работает без установки.
 2. Запусти приложение — со старта включён **Демо-режим (60 Гц)**, чтобы сразу расставить виджеты, выбрать тему, масштаб, прозрачность и шрифты.
 3. Нажми **Закрепить для гонки (`Ctrl + Shift + L`)** — все виджеты станут click-through.
@@ -110,4 +110,4 @@ dotnet publish ApexHUD.csproj -c Release -r win-x64 --self-contained false -p:Pu
 .\installer\build-installer.ps1
 ```
 
-Установщик появится в `dist\Z-Overlay-Setup-v1.1.4.exe`.
+Установщик появится в `dist\Z-Overlay-Setup-v1.1.5.exe`.

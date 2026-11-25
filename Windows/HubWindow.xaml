@@ -484,7 +484,7 @@
                     <Grid>
                         <TextBlock Text="В iRacing включи Borderless Windowed • Глобальный хоткей Lock/Unlock: Ctrl + Shift + L"
                                    FontSize="11" Foreground="#FF64748B" VerticalAlignment="Center" />
-                        <TextBlock Text="ApexHUD 1.1.4" FontFamily="{StaticResource HudMonoFont}" FontSize="10.5" Foreground="#FF475569" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        <TextBlock Text="ApexHUD 1.1.5" FontFamily="{StaticResource HudMonoFont}" FontSize="10.5" Foreground="#FF475569" HorizontalAlignment="Right" VerticalAlignment="Center" />
                     </Grid>
                 </Border>
             </Grid>

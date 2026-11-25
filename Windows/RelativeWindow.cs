@@ -89,7 +89,7 @@ public sealed class RelativeWindow : OverlayWindowBase
         _rootStack = new StackPanel { Effect = GetActiveShadow() };
         Grid.SetIsSharedSizeScope(_rootStack, true);
 
-        _headerGrid = new Grid { Height = 26 };
+        _headerGrid = new Grid { Height = 20 };
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -98,11 +98,11 @@ public sealed class RelativeWindow : OverlayWindowBase
         _titleText = new TextBlock
         {
             Text = "Relative",
-            FontSize = 12,
+            FontSize = 11,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(9, 0, 10, 0)
+            Margin = new Thickness(5, 0, 6, 0)
         };
         Grid.SetColumn(_titleText, 0);
         _headerGrid.Children.Add(_titleText);
@@ -114,30 +114,30 @@ public sealed class RelativeWindow : OverlayWindowBase
         };
 
         _sofText = MakeHeaderText("--");
-        metaPanel.Children.Add(MakeIconMetric(new HudMetricIcon(HudIconKind.Trophy, "#FCD34D", 11.5), _sofText));
+        metaPanel.Children.Add(MakeIconMetric(new HudMetricIcon(HudIconKind.Trophy, "#FCD34D", 10), _sofText));
 
-        _incIcon = new HudMetricIcon(HudIconKind.Warning, "#CBD5E1", 11.5);
+        _incIcon = new HudMetricIcon(HudIconKind.Warning, "#CBD5E1", 10);
         _incText = MakeHeaderText("0/17");
         metaPanel.Children.Add(MakeIconMetric(_incIcon, _incText));
 
         _trackTempText = MakeHeaderText("--°");
-        metaPanel.Children.Add(MakeIconMetric(new HudMetricIcon(HudIconKind.TrackTemp, "#FB923C", 11.5), _trackTempText));
+        metaPanel.Children.Add(MakeIconMetric(new HudMetricIcon(HudIconKind.TrackTemp, "#FB923C", 10), _trackTempText));
 
         _airTempText = MakeHeaderText("--°");
-        metaPanel.Children.Add(MakeIconMetric(new HudMetricIcon(HudIconKind.AirTemp, "#67E8F9", 11.5), _airTempText));
+        metaPanel.Children.Add(MakeIconMetric(new HudMetricIcon(HudIconKind.AirTemp, "#67E8F9", 10), _airTempText));
 
         Grid.SetColumn(metaPanel, 1);
         _headerGrid.Children.Add(metaPanel);
 
         var wetStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        wetStack.Children.Add(new HudMetricIcon(HudIconKind.Raindrop, "#FFFFFF", 10) { Margin = new Thickness(0, 0, 3, 0) });
-        wetStack.Children.Add(new TextBlock { Text = "WET", FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = TextWhite, VerticalAlignment = VerticalAlignment.Center });
+        wetStack.Children.Add(new HudMetricIcon(HudIconKind.Raindrop, "#FFFFFF", 9) { Margin = new Thickness(0, 0, 2, 0) });
+        wetStack.Children.Add(new TextBlock { Text = "WET", FontSize = 9, FontWeight = FontWeights.Bold, Foreground = TextWhite, VerticalAlignment = VerticalAlignment.Center });
         _wetBadge = new Border
         {
             Background = FormatHelpers.GetFrozenBrush("#2563EB"),
             CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(5, 1, 5, 1),
-            Margin = new Thickness(4, 3, 4, 3),
+            Padding = new Thickness(4, 0, 4, 0),
+            Margin = new Thickness(2, 2, 2, 2),
             VerticalAlignment = VerticalAlignment.Center,
             Visibility = Visibility.Collapsed,
             Child = wetStack
@@ -145,11 +145,11 @@ public sealed class RelativeWindow : OverlayWindowBase
         Grid.SetColumn(_wetBadge, 2);
         _headerGrid.Children.Add(_wetBadge);
 
-        _flagIcon = new HudMetricIcon(HudIconKind.Flag, "#FFFFFF", 10) { Margin = new Thickness(0, 0, 4, 0) };
+        _flagIcon = new HudMetricIcon(HudIconKind.Flag, "#FFFFFF", 9) { Margin = new Thickness(0, 0, 3, 0) };
         _flagText = new TextBlock
         {
             Text = "LIVE",
-            FontSize = 10,
+            FontSize = 9.5,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
             VerticalAlignment = VerticalAlignment.Center
@@ -160,8 +160,8 @@ public sealed class RelativeWindow : OverlayWindowBase
         _flagBadge = new Border
         {
             CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(6, 1, 6, 1),
-            Margin = new Thickness(4, 3, 7, 3),
+            Padding = new Thickness(4, 0, 4, 0),
+            Margin = new Thickness(2, 2, 4, 2),
             VerticalAlignment = VerticalAlignment.Center,
             Child = flagStack
         };
@@ -176,7 +176,7 @@ public sealed class RelativeWindow : OverlayWindowBase
         };
         _rootStack.Children.Add(_headerHost);
 
-        var rowsHost = new StackPanel { Margin = new Thickness(0, 1, 0, 3) };
+        var rowsHost = new StackPanel { Margin = new Thickness(0, 0, 0, 1) };
         for (int i = 0; i < MaxRowPool; i++)
         {
             var rv = CreateRowVisual();
@@ -191,12 +191,12 @@ public sealed class RelativeWindow : OverlayWindowBase
 
     private static StackPanel MakeIconMetric(HudMetricIcon icon, TextBlock tb)
     {
-        icon.Margin = new Thickness(0, 0, 3, 0);
+        icon.Margin = new Thickness(0, 0, 2, 0);
         var sp = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 9, 0)
+            Margin = new Thickness(0, 0, 5, 0)
         };
         sp.Children.Add(icon);
         sp.Children.Add(tb);
@@ -206,7 +206,7 @@ public sealed class RelativeWindow : OverlayWindowBase
     private static TextBlock MakeHeaderText(string text) => new()
     {
         Text = text,
-        FontSize = 11.5,
+        FontSize = 10.5,
         FontWeight = FontWeights.Bold,
         Foreground = TextSoft,
         VerticalAlignment = VerticalAlignment.Center
@@ -233,47 +233,47 @@ public sealed class RelativeWindow : OverlayWindowBase
         _titleText.Text = native ? "RELATIVE" : "Relative";
         _titleText.Foreground = native ? IRacingGold : TextWhite;
         _titleText.FontFamily = uiFont;
-        _titleText.FontSize = FontSz(11.5);
+        _titleText.FontSize = FontSz(10.5);
         _sofText.FontFamily = monoFont;
-        _sofText.FontSize = FontSz(11);
+        _sofText.FontSize = FontSz(10);
         _incText.FontFamily = monoFont;
-        _incText.FontSize = FontSz(11);
+        _incText.FontSize = FontSz(10);
         _trackTempText.FontFamily = monoFont;
-        _trackTempText.FontSize = FontSz(11);
+        _trackTempText.FontSize = FontSz(10);
         _airTempText.FontFamily = monoFont;
-        _airTempText.FontSize = FontSz(11);
+        _airTempText.FontSize = FontSz(10);
         _flagText.FontFamily = uiFont;
-        _flagText.FontSize = FontSz(10);
+        _flagText.FontSize = FontSz(9);
 
-        double rowH = Math.Round(26 * Math.Max(1.0, Settings.HudFontScale * 0.95));
+        double rowH = Math.Round(20 * Math.Max(1.0, Settings.HudFontScale * 0.92));
 
         foreach (var rv in _rows)
         {
             rv.RowGrid.Height = rowH;
             rv.CarNumBox.Visibility = Settings.ShowRelativeCarNumber ? Visibility.Visible : Visibility.Collapsed;
             rv.CarNumBox.Background = native ? Brushes.Transparent : CarNumBoxBg;
-            rv.CarNumBox.Padding = native ? new Thickness(2, 0, 2, 0) : new Thickness(4, 0, 4, 0);
+            rv.CarNumBox.Padding = native ? new Thickness(1, 0, 1, 0) : new Thickness(3, 0, 3, 0);
             rv.BrandIcon.Visibility = Settings.ShowCarBrandIcons ? Visibility.Visible : Visibility.Collapsed;
             rv.LicBadge.Visibility = Settings.ShowRelativeLicense ? Visibility.Visible : Visibility.Collapsed;
             rv.IRating.Visibility = Settings.ShowRelativeIRating ? Visibility.Visible : Visibility.Collapsed;
             rv.PaceDelta.Visibility = Settings.ShowRelativePaceDelta ? Visibility.Visible : Visibility.Collapsed;
 
             rv.Name.FontFamily = uiFont;
-            rv.Name.FontSize = FontSz(14);
+            rv.Name.FontSize = FontSz(12);
             rv.StatusText.FontFamily = uiFont;
-            rv.StatusText.FontSize = FontSz(9.5);
+            rv.StatusText.FontSize = FontSz(9);
             rv.Pos.FontFamily = monoFont;
-            rv.Pos.FontSize = FontSz(13.5);
+            rv.Pos.FontSize = FontSz(11.5);
             rv.CarNum.FontFamily = monoFont;
-            rv.CarNum.FontSize = FontSz(12);
+            rv.CarNum.FontSize = FontSz(11);
             rv.LicText.FontFamily = monoFont;
-            rv.LicText.FontSize = FontSz(11.5);
+            rv.LicText.FontSize = FontSz(10);
             rv.IRating.FontFamily = monoFont;
-            rv.IRating.FontSize = FontSz(13);
+            rv.IRating.FontSize = FontSz(11.5);
             rv.PaceDelta.FontFamily = monoFont;
-            rv.PaceDelta.FontSize = FontSz(12);
+            rv.PaceDelta.FontSize = FontSz(11);
             rv.Gap.FontFamily = monoFont;
-            rv.Gap.FontSize = FontSz(14.5);
+            rv.Gap.FontSize = FontSz(12.5);
         }
     }
 
@@ -281,7 +281,7 @@ public sealed class RelativeWindow : OverlayWindowBase
     {
         var rv = new RowVisual();
 
-        var grid = new Grid { Height = 26 };
+        var grid = new Grid { Height = 20 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "RelPos" });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "RelNum" });
@@ -294,7 +294,7 @@ public sealed class RelativeWindow : OverlayWindowBase
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "RelGap" });
         rv.RowGrid = grid;
 
-        rv.ClassBar = new Border { Width = 3, Margin = new Thickness(0, 2, 0, 2), CornerRadius = new CornerRadius(1) };
+        rv.ClassBar = new Border { Width = 3, Margin = new Thickness(0, 1, 0, 1), CornerRadius = new CornerRadius(1) };
         Grid.SetColumn(rv.ClassBar, 0);
         grid.Children.Add(rv.ClassBar);
 
@@ -306,10 +306,10 @@ public sealed class RelativeWindow : OverlayWindowBase
         };
         rv.PosPill = new Border
         {
-            CornerRadius = new CornerRadius(3),
-            MinWidth = 24,
-            Padding = new Thickness(4, 0, 4, 0),
-            Margin = new Thickness(4, 3, 4, 3),
+            CornerRadius = new CornerRadius(2),
+            MinWidth = 18,
+            Padding = new Thickness(3, 0, 3, 0),
+            Margin = new Thickness(2, 1, 2, 1),
             Child = rv.Pos
         };
         Grid.SetColumn(rv.PosPill, 1);
@@ -326,15 +326,14 @@ public sealed class RelativeWindow : OverlayWindowBase
         {
             Background = FormatHelpers.GetFrozenBrush("#24FFFFFF"),
             CornerRadius = new CornerRadius(2),
-            MinWidth = 28,
-            Padding = new Thickness(4, 0, 4, 0),
-            Margin = new Thickness(0, 3, 5, 3),
+            Padding = new Thickness(3, 0, 3, 0),
+            Margin = new Thickness(0, 1, 2, 1),
             Child = rv.CarNum
         };
         Grid.SetColumn(rv.CarNumBox, 2);
         grid.Children.Add(rv.CarNumBox);
 
-        rv.BrandIcon = new CarBrandIcon { Margin = new Thickness(0, 0, 5, 0) };
+        rv.BrandIcon = new CarBrandIcon { Width = 16, Height = 14, Margin = new Thickness(0, 0, 3, 0) };
         Grid.SetColumn(rv.BrandIcon, 3);
         grid.Children.Add(rv.BrandIcon);
 
@@ -342,14 +341,14 @@ public sealed class RelativeWindow : OverlayWindowBase
         {
             FontWeight = FontWeights.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
-            MaxWidth = 230,
+            MaxWidth = 190,
             TextTrimming = TextTrimming.CharacterEllipsis,
-            Margin = new Thickness(1, 0, 8, 0)
+            Margin = new Thickness(0, 0, 5, 0)
         };
         Grid.SetColumn(rv.Name, 4);
         grid.Children.Add(rv.Name);
 
-        rv.StatusIcon = new HudMetricIcon(HudIconKind.Wrench, "#FCD34D", 9.5) { Margin = new Thickness(0, 0, 3, 0) };
+        rv.StatusIcon = new HudMetricIcon(HudIconKind.Wrench, "#FCD34D", 9) { Margin = new Thickness(0, 0, 2, 0) };
         rv.StatusText = new TextBlock
         {
             FontWeight = FontWeights.Bold,
@@ -361,8 +360,8 @@ public sealed class RelativeWindow : OverlayWindowBase
         rv.StatusBadge = new Border
         {
             CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(4, 1, 4, 1),
-            Margin = new Thickness(0, 3, 6, 3),
+            Padding = new Thickness(3, 0, 3, 0),
+            Margin = new Thickness(0, 1, 3, 1),
             Visibility = Visibility.Collapsed,
             Child = stStack
         };
@@ -379,8 +378,8 @@ public sealed class RelativeWindow : OverlayWindowBase
         rv.LicBadge = new Border
         {
             CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(5, 0, 5, 0),
-            Margin = new Thickness(0, 3, 6, 3),
+            Padding = new Thickness(3, 0, 3, 0),
+            Margin = new Thickness(0, 1, 3, 1),
             Child = rv.LicText
         };
         Grid.SetColumn(rv.LicBadge, 6);
@@ -392,7 +391,7 @@ public sealed class RelativeWindow : OverlayWindowBase
             Foreground = TextSoft,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 7, 0)
+            Margin = new Thickness(0, 0, 4, 0)
         };
         Grid.SetColumn(rv.IRating, 7);
         grid.Children.Add(rv.IRating);
@@ -402,7 +401,7 @@ public sealed class RelativeWindow : OverlayWindowBase
             FontWeight = FontWeights.Bold,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 7, 0)
+            Margin = new Thickness(0, 0, 4, 0)
         };
         Grid.SetColumn(rv.PaceDelta, 8);
         grid.Children.Add(rv.PaceDelta);
@@ -412,8 +411,7 @@ public sealed class RelativeWindow : OverlayWindowBase
             FontWeight = FontWeights.Bold,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
-            MinWidth = 44,
-            Margin = new Thickness(0, 0, 9, 0)
+            Margin = new Thickness(0, 0, 5, 0)
         };
         Grid.SetColumn(rv.Gap, 9);
         grid.Children.Add(rv.Gap);

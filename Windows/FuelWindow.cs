@@ -58,7 +58,7 @@ public sealed class FuelWindow : OverlayWindowBase
     {
         _outerBorder = new Border
         {
-            Width = 312,
+            Width = 252,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
             SnapsToDevicePixels = true
@@ -71,7 +71,7 @@ public sealed class FuelWindow : OverlayWindowBase
         var root = _rootStack;
 
         // Header
-        _headerGrid = new Grid { Height = 24 };
+        _headerGrid = new Grid { Height = 19 };
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -79,11 +79,11 @@ public sealed class FuelWindow : OverlayWindowBase
         _titleText = new TextBlock
         {
             Text = "Fuel",
-            FontSize = 11,
+            FontSize = 10.5,
             FontWeight = FontWeights.SemiBold,
             Foreground = TextWhite,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(10, 0, 8, 0)
+            Margin = new Thickness(6, 0, 5, 0)
         };
         labels.Add(_titleText);
         _headerGrid.Children.Add(_titleText);
@@ -95,7 +95,7 @@ public sealed class FuelWindow : OverlayWindowBase
             FontSize = 9.5,
             FontWeight = FontWeights.SemiBold,
             Foreground = AccentSky,
-            Margin = new Thickness(0, 0, 8, 0),
+            Margin = new Thickness(0, 0, 5, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
         _stopsText = new TextBlock
@@ -115,7 +115,7 @@ public sealed class FuelWindow : OverlayWindowBase
         _statusText = new TextBlock
         {
             Text = "OK",
-            FontSize = 9.5,
+            FontSize = 9,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite
         };
@@ -124,8 +124,8 @@ public sealed class FuelWindow : OverlayWindowBase
         {
             Background = OkGreen,
             CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(6, 1, 6, 1),
-            Margin = new Thickness(0, 3, 7, 3),
+            Padding = new Thickness(4, 0, 4, 0),
+            Margin = new Thickness(0, 2, 5, 2),
             VerticalAlignment = VerticalAlignment.Center,
             Child = _statusText
         };
@@ -134,52 +134,52 @@ public sealed class FuelWindow : OverlayWindowBase
         root.Children.Add(_headerGrid);
 
         // Tank fill bar
-        _fuelBarHost = new Grid { Height = 3, Background = FormatHelpers.GetFrozenBrush("#1EFFFFFF") };
+        _fuelBarHost = new Grid { Height = 2.5, Background = FormatHelpers.GetFrozenBrush("#1EFFFFFF") };
         _fuelBarFill = new Border { Background = AccentBlue, HorizontalAlignment = HorizontalAlignment.Left, Width = 0 };
         _fuelBarHost.Children.Add(_fuelBarFill);
         root.Children.Add(_fuelBarHost);
 
         // Row 1: Primary stats
-        var topMetrics = new Grid { Margin = new Thickness(10, 7, 10, 6) };
+        var topMetrics = new Grid { Margin = new Thickness(6, 3, 6, 3) };
         topMetrics.ColumnDefinitions.Add(new ColumnDefinition());
         topMetrics.ColumnDefinitions.Add(new ColumnDefinition());
         topMetrics.ColumnDefinitions.Add(new ColumnDefinition());
 
-        _fuelLevelVal = AddMetric(topMetrics, 0, "REMAIN", "0.0 L", 16, TextWhite, labels, values);
-        _estLapsVal = AddMetric(topMetrics, 1, "EST LAPS", "--", 16, AccentSky, labels, values);
-        _raceLapsVal = AddMetric(topMetrics, 2, "RACE REM", "--", 16, TextMuted, labels, values);
+        _fuelLevelVal = AddMetric(topMetrics, 0, "REMAIN", "0.0 L", 15, TextWhite, labels, values);
+        _estLapsVal = AddMetric(topMetrics, 1, "EST LAPS", "--", 15, AccentSky, labels, values);
+        _raceLapsVal = AddMetric(topMetrics, 2, "RACE REM", "--", 15, TextMuted, labels, values);
         root.Children.Add(topMetrics);
 
         root.Children.Add(new Border { Height = 1, Background = Hairline });
 
         // Row 2: Burn rates
-        var burnGrid = new Grid { Margin = new Thickness(10, 5, 10, 5) };
+        var burnGrid = new Grid { Margin = new Thickness(6, 2, 6, 2) };
         burnGrid.ColumnDefinitions.Add(new ColumnDefinition());
         burnGrid.ColumnDefinitions.Add(new ColumnDefinition());
         burnGrid.ColumnDefinitions.Add(new ColumnDefinition());
 
-        _lastBurnVal = AddMetric(burnGrid, 0, "LAST /L", "--", 12, TextWhite, labels, values);
-        _avgBurnVal = AddMetric(burnGrid, 1, "AVG 5L", "--", 12, TextWhite, labels, values);
-        _maxBurnVal = AddMetric(burnGrid, 2, "MAX /L", "--", 12, TextMuted, labels, values);
+        _lastBurnVal = AddMetric(burnGrid, 0, "LAST /L", "--", 11.5, TextWhite, labels, values);
+        _avgBurnVal = AddMetric(burnGrid, 1, "AVG 5L", "--", 11.5, TextWhite, labels, values);
+        _maxBurnVal = AddMetric(burnGrid, 2, "MAX /L", "--", 11.5, TextMuted, labels, values);
         root.Children.Add(burnGrid);
 
         root.Children.Add(new Border { Height = 1, Background = Hairline });
 
         // Row 3: Racelab 3-column Refuel Strategy Matrix (MIN | TARGET | SAFE)
-        var matrixGrid = new Grid { Margin = new Thickness(10, 6, 10, 6) };
+        var matrixGrid = new Grid { Margin = new Thickness(6, 3, 6, 3) };
         matrixGrid.ColumnDefinitions.Add(new ColumnDefinition());
         matrixGrid.ColumnDefinitions.Add(new ColumnDefinition());
         matrixGrid.ColumnDefinitions.Add(new ColumnDefinition());
 
-        _minAddVal = AddMetric(matrixGrid, 0, "MIN (+0L)", "--", 13.5, TextMuted, labels, values);
-        (_targetAddLabel, _targetAddVal) = AddMetricWithLabel(matrixGrid, 1, "ADD (+0.5L)", "--", 15, AccentAmber, labels, values);
-        _safeAddVal = AddMetric(matrixGrid, 2, "SAFE (+1.5L)", "--", 13.5, TextWhite, labels, values);
+        _minAddVal = AddMetric(matrixGrid, 0, "MIN (+0L)", "--", 12.5, TextMuted, labels, values);
+        (_targetAddLabel, _targetAddVal) = AddMetricWithLabel(matrixGrid, 1, "ADD (+0.5L)", "--", 14, AccentAmber, labels, values);
+        _safeAddVal = AddMetric(matrixGrid, 2, "SAFE (+1.5L)", "--", 12.5, TextWhite, labels, values);
         root.Children.Add(matrixGrid);
 
         root.Children.Add(new Border { Height = 1, Background = Hairline });
 
         // Row 4: Refuel Time + Target Save Burn
-        var footerGrid = new Grid { Margin = new Thickness(10, 4, 10, 6) };
+        var footerGrid = new Grid { Margin = new Thickness(6, 2, 6, 3) };
         footerGrid.ColumnDefinitions.Add(new ColumnDefinition());
         footerGrid.ColumnDefinitions.Add(new ColumnDefinition());
 
@@ -236,20 +236,20 @@ public sealed class FuelWindow : OverlayWindowBase
         foreach (var l in _allLabels) l.FontFamily = uiFont;
         foreach (var v in _allValues) v.FontFamily = monoFont;
 
-        _titleText.FontSize = FontSz(11.5);
-        _modeBadgeText.FontSize = FontSz(10.5);
-        _stopsText.FontSize = FontSz(10.5);
-        _fuelLevelVal.FontSize = FontSz(19);
-        _estLapsVal.FontSize = FontSz(19);
-        _raceLapsVal.FontSize = FontSz(19);
-        _lastBurnVal.FontSize = FontSz(14);
-        _avgBurnVal.FontSize = FontSz(14);
-        _maxBurnVal.FontSize = FontSz(14);
-        _minAddVal.FontSize = FontSz(15.5);
-        _targetAddVal.FontSize = FontSz(17.5);
-        _safeAddVal.FontSize = FontSz(15.5);
-        _refuelTimeVal.FontSize = FontSz(11.5);
-        _saveTargetVal.FontSize = FontSz(11.5);
+        _titleText.FontSize = FontSz(10.5);
+        _modeBadgeText.FontSize = FontSz(9.5);
+        _stopsText.FontSize = FontSz(9.5);
+        _fuelLevelVal.FontSize = FontSz(15.5);
+        _estLapsVal.FontSize = FontSz(15.5);
+        _raceLapsVal.FontSize = FontSz(15.5);
+        _lastBurnVal.FontSize = FontSz(12);
+        _avgBurnVal.FontSize = FontSz(12);
+        _maxBurnVal.FontSize = FontSz(12);
+        _minAddVal.FontSize = FontSz(13);
+        _targetAddVal.FontSize = FontSz(14.5);
+        _safeAddVal.FontSize = FontSz(13);
+        _refuelTimeVal.FontSize = FontSz(10);
+        _saveTargetVal.FontSize = FontSz(10);
     }
 
     private static TextBlock AddMetric(
@@ -267,7 +267,7 @@ public sealed class FuelWindow : OverlayWindowBase
         var lbl = new TextBlock
         {
             Text = label,
-            FontSize = 9,
+            FontSize = 8.5,
             FontWeight = FontWeights.SemiBold,
             Foreground = TextMuted
         };
@@ -335,7 +335,7 @@ public sealed class FuelWindow : OverlayWindowBase
             ? $"SAVE: {f.TargetBurnPerLap * mult:0.00} {unit}/L"
             : "SAVE: --";
 
-        double barW = _fuelBarHost.ActualWidth > 10 ? _fuelBarHost.ActualWidth : 310;
+        double barW = _fuelBarHost.ActualWidth > 10 ? _fuelBarHost.ActualWidth : 250;
         _fuelBarFill.Width = Math.Clamp(f.FuelPct, 0f, 1f) * barW;
 
         if (f.IsLowFuel)

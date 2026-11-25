@@ -64,7 +64,7 @@ public sealed class InputsWindow : OverlayWindowBase
     private readonly Border _cornersHost;
     private readonly CornerSlotVisual[] _cornerSlots = new CornerSlotVisual[4];
 
-    private const double PedalBarHeight = 72.0;
+    private const double PedalBarHeight = 56.0;
 
     private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#24FFFFFF");
     private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
@@ -104,8 +104,8 @@ public sealed class InputsWindow : OverlayWindowBase
         // 1) Top Shift Light Bar
         _shiftBar = new ShiftLightBar
         {
-            Height = 7,
-            Margin = new Thickness(6, 5, 6, 5)
+            Height = 5,
+            Margin = new Thickness(4, 3, 4, 3)
         };
         _shiftRowHost = new Border
         {
@@ -119,14 +119,14 @@ public sealed class InputsWindow : OverlayWindowBase
         _mainRow = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Height = 104
+            Height = 80
         };
 
         // Zone A: 60Hz Pedal Graph (configurable width & duration)
         _graphZone = new Grid
         {
             Width = 240,
-            Margin = new Thickness(6, 5, 6, 5)
+            Margin = new Thickness(4, 3, 4, 3)
         };
         _graph = new InputGraphCanvas();
         _graphZone.Children.Add(_graph);
@@ -135,15 +135,15 @@ public sealed class InputsWindow : OverlayWindowBase
         {
             Background = AbsBrush,
             CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(5, 1, 5, 1),
+            Padding = new Thickness(4, 0, 4, 0),
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(0, 4, 4, 0),
+            Margin = new Thickness(0, 3, 3, 0),
             Visibility = Visibility.Collapsed,
             Child = new TextBlock
             {
                 Text = "ABS",
-                FontSize = 10,
+                FontSize = 9.5,
                 FontWeight = FontWeights.ExtraBold,
                 Foreground = FormatHelpers.GetFrozenBrush("#0B0E14")
             }
@@ -158,7 +158,7 @@ public sealed class InputsWindow : OverlayWindowBase
         _pedalsZone = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Margin = new Thickness(8, 6, 8, 5),
+            Margin = new Thickness(4, 3, 4, 2),
             VerticalAlignment = VerticalAlignment.Center
         };
         (_clutchCol, _clutchFill, _clutchPct) = MakePedalColumn(ClutchBrush);
@@ -180,17 +180,17 @@ public sealed class InputsWindow : OverlayWindowBase
         // Zone C: Large Crisp Gear / Speed / RPM Cluster
         _gearZone = new Grid
         {
-            MinWidth = 96,
-            Margin = new Thickness(8, 2, 8, 3)
+            MinWidth = 72,
+            Margin = new Thickness(4, 1, 4, 1)
         };
-        _gearZone.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
-        _gearZone.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
-        _gearZone.RowDefinitions.Add(new RowDefinition { Height = new GridLength(18) });
+        _gearZone.RowDefinitions.Add(new RowDefinition { Height = new GridLength(36) });
+        _gearZone.RowDefinitions.Add(new RowDefinition { Height = new GridLength(22) });
+        _gearZone.RowDefinitions.Add(new RowDefinition { Height = new GridLength(14) });
 
         _gearText = new TextBlock
         {
             Text = "N",
-            FontSize = 42,
+            FontSize = 32,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -208,7 +208,7 @@ public sealed class InputsWindow : OverlayWindowBase
         _speedText = new TextBlock
         {
             Text = "0",
-            FontSize = 20,
+            FontSize = 17,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
             VerticalAlignment = VerticalAlignment.Bottom
@@ -216,10 +216,10 @@ public sealed class InputsWindow : OverlayWindowBase
         _unitText = new TextBlock
         {
             Text = "km/h",
-            FontSize = 10,
+            FontSize = 9.5,
             FontWeight = FontWeights.SemiBold,
             Foreground = TextMuted,
-            Margin = new Thickness(3, 0, 0, 3),
+            Margin = new Thickness(2, 0, 0, 2),
             VerticalAlignment = VerticalAlignment.Bottom
         };
         speedRow.Children.Add(_speedText);
@@ -230,7 +230,7 @@ public sealed class InputsWindow : OverlayWindowBase
         _rpmText = new TextBlock
         {
             Text = "0 rpm",
-            FontSize = 11,
+            FontSize = 10,
             FontWeight = FontWeights.SemiBold,
             Foreground = TextMuted,
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -246,19 +246,19 @@ public sealed class InputsWindow : OverlayWindowBase
         // Zone D: Steering Wheel Visual
         _wheelZone = new StackPanel
         {
-            Width = 84,
+            Width = 64,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center
         };
-        _wheel = new SteeringWheelVisual { Width = 60, Height = 60 };
+        _wheel = new SteeringWheelVisual { Width = 46, Height = 46 };
         _steerDegText = new TextBlock
         {
             Text = "0°",
-            FontSize = 12,
+            FontSize = 10.5,
             FontWeight = FontWeights.SemiBold,
             Foreground = TextSoft,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 3, 0, 0)
+            Margin = new Thickness(0, 1, 0, 0)
         };
         _wheelZone.Children.Add(_wheel);
         _wheelZone.Children.Add(_steerDegText);
@@ -267,7 +267,7 @@ public sealed class InputsWindow : OverlayWindowBase
         _rootStack.Children.Add(_mainRow);
 
         // 3) Bottom Strip A: Electronics (BB/TC/ABS) + Live Delta Bar
-        var elecDeltaGrid = new Grid { Height = 26, Margin = new Thickness(8, 0, 8, 0) };
+        var elecDeltaGrid = new Grid { Height = 20, Margin = new Thickness(5, 0, 5, 0) };
         elecDeltaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         elecDeltaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
@@ -282,10 +282,10 @@ public sealed class InputsWindow : OverlayWindowBase
         elecDeltaGrid.Children.Add(_elecPanel);
 
         _deltaPanel = new Grid { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
-        _deltaPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
-        _deltaPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+        _deltaPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(72) });
+        _deltaPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(46) });
 
-        var barBg = new Grid { Height = 7, Background = FormatHelpers.GetFrozenBrush("#28FFFFFF"), VerticalAlignment = VerticalAlignment.Center };
+        var barBg = new Grid { Height = 6, Background = FormatHelpers.GetFrozenBrush("#28FFFFFF"), VerticalAlignment = VerticalAlignment.Center };
         barBg.ColumnDefinitions.Add(new ColumnDefinition());
         barBg.ColumnDefinitions.Add(new ColumnDefinition());
         _deltaBarLeft = new Border { Background = DeltaGreen, HorizontalAlignment = HorizontalAlignment.Right, Width = 0, CornerRadius = new CornerRadius(1, 0, 0, 1) };
@@ -303,7 +303,7 @@ public sealed class InputsWindow : OverlayWindowBase
         _deltaText = new TextBlock
         {
             Text = "+0.00",
-            FontSize = 12.5,
+            FontSize = 11,
             FontWeight = FontWeights.Bold,
             Foreground = TextSoft,
             HorizontalAlignment = HorizontalAlignment.Right,
@@ -324,7 +324,7 @@ public sealed class InputsWindow : OverlayWindowBase
         _rootStack.Children.Add(_elecDeltaHost);
 
         // 4) Bottom Strip B: Racelab 4-Corner Min Speed Strip (Your Min vs Session Fastest)
-        var cornersGrid = new Grid { Margin = new Thickness(6, 5, 6, 5) };
+        var cornersGrid = new Grid { Margin = new Thickness(4, 3, 4, 3) };
         for (int i = 0; i < 4; i++)
         {
             cornersGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -363,23 +363,23 @@ public sealed class InputsWindow : OverlayWindowBase
         s.PlayerSpeed = new TextBlock
         {
             Text = "--",
-            FontSize = 22,
+            FontSize = 18,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(6, 0, 6, 0)
+            Margin = new Thickness(4, 0, 4, 0)
         };
         outerStack.Children.Add(s.PlayerSpeed);
 
         // Bottom row: GREEN (my max / PB) on left | PURPLE (session fastest) on right
-        var refsRow = new Grid { Margin = new Thickness(6, 0, 6, 4) };
+        var refsRow = new Grid { Margin = new Thickness(4, 0, 4, 2) };
         refsRow.ColumnDefinitions.Add(new ColumnDefinition());
         refsRow.ColumnDefinitions.Add(new ColumnDefinition());
 
         s.PersonalBest = new TextBlock
         {
             Text = "--",
-            FontSize = 13,
+            FontSize = 11.5,
             FontWeight = FontWeights.Bold,
             Foreground = DeltaGreen,
             HorizontalAlignment = HorizontalAlignment.Left
@@ -390,7 +390,7 @@ public sealed class InputsWindow : OverlayWindowBase
         s.SessionFastest = new TextBlock
         {
             Text = "--",
-            FontSize = 13,
+            FontSize = 11.5,
             FontWeight = FontWeights.Bold,
             Foreground = PurpleFastest,
             HorizontalAlignment = HorizontalAlignment.Right
@@ -405,9 +405,9 @@ public sealed class InputsWindow : OverlayWindowBase
             Background = CornerIdleBg,
             BorderBrush = FormatHelpers.GetFrozenBrush("#22FFFFFF"),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            Margin = new Thickness(2.5, 0, 2.5, 0),
-            MinWidth = 76,
+            CornerRadius = new CornerRadius(3),
+            Margin = new Thickness(1.5, 0, 1.5, 0),
+            MinWidth = 58,
             Child = outerStack
         };
 
@@ -424,10 +424,10 @@ public sealed class InputsWindow : OverlayWindowBase
     private static TextBlock MakeElecPill(string init, string colorHex) => new()
     {
         Text = init,
-        FontSize = 11.5,
+        FontSize = 10.5,
         FontWeight = FontWeights.Bold,
         Foreground = FormatHelpers.GetFrozenBrush(colorHex),
-        Margin = new Thickness(0, 0, 12, 0),
+        Margin = new Thickness(0, 0, 7, 0),
         VerticalAlignment = VerticalAlignment.Center
     };
 
@@ -452,40 +452,40 @@ public sealed class InputsWindow : OverlayWindowBase
         var monoFont = GetMonoFont();
 
         _clutchPct.FontFamily = monoFont;
-        _clutchPct.FontSize = FontSz(11);
+        _clutchPct.FontSize = FontSz(10);
         _brakePct.FontFamily = monoFont;
-        _brakePct.FontSize = FontSz(11);
+        _brakePct.FontSize = FontSz(10);
         _throttlePct.FontFamily = monoFont;
-        _throttlePct.FontSize = FontSz(11);
+        _throttlePct.FontSize = FontSz(10);
 
         _gearText.FontFamily = monoFont;
-        _gearText.FontSize = FontSz(42);
+        _gearText.FontSize = FontSz(32);
         _speedText.FontFamily = monoFont;
-        _speedText.FontSize = FontSz(20);
+        _speedText.FontSize = FontSz(17);
         _unitText.FontFamily = uiFont;
-        _unitText.FontSize = FontSz(10);
+        _unitText.FontSize = FontSz(9.5);
         _rpmText.FontFamily = monoFont;
-        _rpmText.FontSize = FontSz(11);
+        _rpmText.FontSize = FontSz(10);
         _steerDegText.FontFamily = monoFont;
-        _steerDegText.FontSize = FontSz(12);
+        _steerDegText.FontSize = FontSz(10.5);
 
         _bbText.FontFamily = monoFont;
-        _bbText.FontSize = FontSz(11.5);
+        _bbText.FontSize = FontSz(10.5);
         _tcText.FontFamily = monoFont;
-        _tcText.FontSize = FontSz(11.5);
+        _tcText.FontSize = FontSz(10.5);
         _absSetText.FontFamily = monoFont;
-        _absSetText.FontSize = FontSz(11.5);
+        _absSetText.FontSize = FontSz(10.5);
         _deltaText.FontFamily = monoFont;
-        _deltaText.FontSize = FontSz(12.5);
+        _deltaText.FontSize = FontSz(11);
 
         foreach (var slot in _cornerSlots)
         {
             slot.PlayerSpeed.FontFamily = monoFont;
-            slot.PlayerSpeed.FontSize = FontSz(22);
+            slot.PlayerSpeed.FontSize = FontSz(18);
             slot.PersonalBest.FontFamily = monoFont;
-            slot.PersonalBest.FontSize = FontSz(13);
+            slot.PersonalBest.FontSize = FontSz(11.5);
             slot.SessionFastest.FontFamily = monoFont;
-            slot.SessionFastest.FontSize = FontSz(13);
+            slot.SessionFastest.FontSize = FontSz(11.5);
         }
 
         // 100% Modular visibility + clean divider management
@@ -520,11 +520,11 @@ public sealed class InputsWindow : OverlayWindowBase
 
     private static (StackPanel Col, Border Fill, TextBlock Label) MakePedalColumn(Brush fillBrush)
     {
-        var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(3, 0, 3, 0) };
+        var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(2, 0, 2, 0) };
 
         var track = new Border
         {
-            Width = 15,
+            Width = 12,
             Height = PedalBarHeight,
             Background = FormatHelpers.GetFrozenBrush("#1EFFFFFF"),
             BorderBrush = FormatHelpers.GetFrozenBrush("#2CFFFFFF"),
@@ -544,12 +544,12 @@ public sealed class InputsWindow : OverlayWindowBase
         var pct = new TextBlock
         {
             Text = "0",
-            FontSize = 11,
+            FontSize = 10,
             FontWeight = FontWeights.SemiBold,
             Foreground = TextSoft,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 2, 0, 0),
-            Width = 24,
+            Margin = new Thickness(0, 1, 0, 0),
+            Width = 20,
             TextAlignment = TextAlignment.Center
         };
 
@@ -626,7 +626,7 @@ public sealed class InputsWindow : OverlayWindowBase
                 double frac = Math.Clamp(Math.Abs(d) / 1.0, 0.0, 1.0);
                 if (d <= 0f)
                 {
-                    _deltaBarLeft.Width = Math.Round(frac * 45.0);
+                    _deltaBarLeft.Width = Math.Round(frac * 36.0);
                     _deltaBarRight.Width = 0;
                     _deltaText.Text = $"{d:0.00}";
                     _deltaText.Foreground = DeltaGreen;
@@ -634,7 +634,7 @@ public sealed class InputsWindow : OverlayWindowBase
                 else
                 {
                     _deltaBarLeft.Width = 0;
-                    _deltaBarRight.Width = Math.Round(frac * 45.0);
+                    _deltaBarRight.Width = Math.Round(frac * 36.0);
                     _deltaText.Text = $"+{d:0.00}";
                     _deltaText.Foreground = DeltaRed;
                 }
