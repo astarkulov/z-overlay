@@ -3,7 +3,7 @@
 
 #define MyAppName "Z-Overlay (ApexHUD)"
 #define MyAppShortName "Z-Overlay"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "astarkulov"
 #define MyAppURL "https://github.com/astarkulov/z-overlay"
 #define MyAppExeName "ApexHUD.exe"
