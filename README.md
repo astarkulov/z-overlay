@@ -12,28 +12,29 @@
 Поддерживает **2 темы оформления** в 1 клик: **iRacing Native** (бесшовная стилистика нового интерфейса iRacing 2026: матовый графит, золотой акцент, тонкие разделители и вертикальная классовая линия с нодами) и **Apex Carbon**.
 
 <p align="center">
-  <img src="docs/screenshots/hero-overview.png" alt="Z-Overlay — общий вид всех виджетов поверх трассы" width="100%" />
+  <img src="docs/screenshots/hero-overview.gif" alt="Z-Overlay — живое превью всех виджетов с анимациями" width="100%" />
 </p>
 
 ---
 
 ## Виджеты
 
-### Standings (Multiclass)
+### Standings (Multiclass + GPU-анимации)
 
 <p align="center">
-  <img src="docs/screenshots/standings.png" alt="Z-Overlay Standings Widget" width="760" />
+  <img src="docs/screenshots/standings.gif" alt="Z-Overlay Standings Widget — живые обгоны и анимации" width="760" />
 </p>
 
+- **Живые GPU-анимации (F1 / Racelab style)**: плавный слайд строк при обгонах, зелёная/красная вспышка при смене позиции и фиолетовая вспышка нового лучшего круга класса
 - Полный **мультикласс** с расчётом **SOF** по каждому классу, вертикальной классовой линией с нодами и нативной золотой подсветкой игрока
-- В **Practice / Qualifying** автоматически сортирует по **Fastest Lap (`BEST`)** из результатов сессии (даже если машины в боксах) и скрывает колонку `±iR`
+- В **Practice / Qualifying** автоматически сортирует по **Fastest Lap (`BEST`)** из результатов сессии (даже если машины в боксах) и скрывает `±` / `±iR`
 - В **Race** — живой прогноз **`±iR`** (формула Elo iRacing), отыгранные/потерянные позиции (`▲2` / `▼1`), переключение **Gap / Interval**, пит-стопы и длина стинта (`P1·8` / `L11`)
 - Векторные иконки 19+ марок авто (**Porsche, Ferrari, BMW, Mercedes-AMG, Audi, McLaren, Lamborghini, Ford, Chevrolet/Corvette, Aston Martin, Acura, Honda, Cadillac, Toyota, Mazda, Dallara, Hyundai, Lotus, Formula**), бейджи шин (`S / M / H / W / D`) и фиолетовый лучший круг класса
 
 ### Relative
 
 <p align="center">
-  <img src="docs/screenshots/relative.png" alt="Z-Overlay Relative Widget" width="760" />
+  <img src="docs/screenshots/relative.gif" alt="Z-Overlay Relative Widget" width="760" />
 </p>
 
 - Ближайшие машины спереди и сзади с точными отрывами в секундах (`CarIdxEstTime`) и динамической авто-шириной колонок (имена и фамилии никогда не обрезаются)
@@ -44,7 +45,7 @@
 ### Input Telemetry
 
 <p align="center">
-  <img src="docs/screenshots/inputs.png" alt="Z-Overlay Input Telemetry Widget" width="680" />
+  <img src="docs/screenshots/inputs.gif" alt="Z-Overlay Input Telemetry Widget" width="680" />
 </p>
 
 - **100% модульный виджет** — каждый блок включается и выключается независимо в настройках (график, бары педалей, передача/скорость/RPM, шифт-бар, руль, `BB / TC / ABS`, Delta Bar, полоса минимальных скоростей)
@@ -55,7 +56,7 @@
 ### Fuel Strategy & Radar / Blind Spot
 
 <p align="center">
-  <img src="docs/screenshots/fuel-radar.png" alt="Z-Overlay Fuel Strategy and Radar Widgets" width="620" />
+  <img src="docs/screenshots/fuel-radar.gif" alt="Z-Overlay Fuel Strategy and Radar Widgets" width="620" />
 </p>
 
 - **Fuel Strategy**: точный трекер расхода (фильтрует пит-стопы и неполные круги), 3 режима расчёта (**`AVG 5L` / `LAST` / `MAX`**), 3-колоночная матрица долива (**`MIN` | `ADD` | `SAFE`**), число пит-стопов (`NO STOP` / `1 STOP`), расчёт времени дозаправки и целевой расход на экономию (`SAVE`)
