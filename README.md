@@ -12,7 +12,7 @@
 Поддерживает **2 темы оформления** в 1 клик: **iRacing Native** (бесшовная стилистика нового интерфейса iRacing 2026: матовый графит, золотой акцент, тонкие разделители и вертикальная классовая линия с нодами) и **Apex Carbon**.
 
 <p align="center">
-  <img src="docs/screenshots/hero-overview.gif" alt="Z-Overlay — живое превью всех виджетов с анимациями" width="100%" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/hero-overview.gif?v=1.1.11" alt="Z-Overlay — живое превью всех виджетов с анимациями" width="100%" />
 </p>
 
 ---
@@ -22,7 +22,7 @@
 ### Standings (Multiclass + GPU-анимации)
 
 <p align="center">
-  <img src="docs/screenshots/standings.gif" alt="Z-Overlay Standings Widget — живые обгоны и анимации" width="760" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/standings.gif?v=1.1.11" alt="Z-Overlay Standings Widget — живые обгоны и анимации" width="760" />
 </p>
 
 - **Живые GPU-анимации (F1 / Racelab style)**: плавный слайд строк при обгонах, зелёная/красная вспышка при смене позиции и фиолетовая вспышка нового лучшего круга класса
@@ -34,7 +34,7 @@
 ### Relative
 
 <p align="center">
-  <img src="docs/screenshots/relative.gif" alt="Z-Overlay Relative Widget" width="760" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/relative.gif?v=1.1.11" alt="Z-Overlay Relative Widget" width="760" />
 </p>
 
 - Ближайшие машины спереди и сзади с точными отрывами в секундах (`CarIdxEstTime`) и динамической авто-шириной колонок (имена и фамилии никогда не обрезаются)
@@ -45,7 +45,7 @@
 ### Input Telemetry
 
 <p align="center">
-  <img src="docs/screenshots/inputs.gif" alt="Z-Overlay Input Telemetry Widget" width="680" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/inputs.gif?v=1.1.11" alt="Z-Overlay Input Telemetry Widget" width="680" />
 </p>
 
 - **100% модульный виджет** — каждый блок включается и выключается независимо в настройках (график, бары педалей, передача/скорость/RPM, шифт-бар, руль, `BB / TC / ABS`, Delta Bar, полоса минимальных скоростей)
@@ -56,7 +56,7 @@
 ### Fuel Strategy & Radar / Blind Spot
 
 <p align="center">
-  <img src="docs/screenshots/fuel-radar.gif" alt="Z-Overlay Fuel Strategy and Radar Widgets" width="620" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/fuel-radar.gif?v=1.1.11" alt="Z-Overlay Fuel Strategy and Radar Widgets" width="620" />
 </p>
 
 - **Fuel Strategy**: точный трекер расхода (фильтрует пит-стопы и неполные круги), 3 режима расчёта (**`AVG 5L` / `LAST` / `MAX`**), 3-колоночная матрица долива (**`MIN` | `ADD` | `SAFE`**), число пит-стопов (`NO STOP` / `1 STOP`), расчёт времени дозаправки и целевой расход на экономию (`SAVE`)
@@ -67,7 +67,7 @@
 ## Центр управления (Hub) и кастомизация
 
 <p align="center">
-  <img src="docs/screenshots/hub.png" alt="Z-Overlay Control Hub" width="760" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/hub.png?v=1.1.11" alt="Z-Overlay Control Hub" width="760" />
 </p>
 
 - **2 встроенные темы в 1 клик**: `iRacing Native` и `Apex Carbon` + раздельная прозрачность подложек (`0–95%`)
