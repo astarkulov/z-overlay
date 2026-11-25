@@ -83,10 +83,10 @@ public sealed class InputsWindow : OverlayWindowBase
     private sealed class CornerSlotVisual
     {
         public Border Box = null!;
-        public TextBlock Label = null!;
+        public Border TopAccent = null!;
         public TextBlock PlayerSpeed = null!;
-        public TextBlock FastestRef = null!;
         public TextBlock Delta = null!;
+        public TextBlock FastestRef = null!;
     }
 
     public InputsWindow(AppSettings settings) : base("Inputs", settings)
@@ -349,72 +349,64 @@ public sealed class InputsWindow : OverlayWindowBase
     {
         var s = new CornerSlotVisual();
 
-        var g = new Grid();
-        g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-        s.Label = new TextBlock
+        var outerStack = new StackPanel();
+        s.TopAccent = new Border
         {
-            Text = "T-",
-            FontSize = 9.5,
-            FontWeight = FontWeights.Bold,
-            Foreground = TextMuted,
-            VerticalAlignment = VerticalAlignment.Center
+            Height = 2,
+            Background = Brushes.Transparent,
+            Margin = new Thickness(0, 0, 0, 3)
         };
-        Grid.SetRow(s.Label, 0);
-        Grid.SetColumn(s.Label, 0);
-        g.Children.Add(s.Label);
+        outerStack.Children.Add(s.TopAccent);
 
-        s.Delta = new TextBlock
-        {
-            Text = "",
-            FontSize = 10.5,
-            FontWeight = FontWeights.Bold,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        Grid.SetRow(s.Delta, 0);
-        Grid.SetColumn(s.Delta, 1);
-        g.Children.Add(s.Delta);
+        // Top row: BIG bold player min speed + crisp delta right next to it
+        var topRow = new Grid { Margin = new Thickness(6, 0, 6, 0) };
+        topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         s.PlayerSpeed = new TextBlock
         {
             Text = "--",
-            FontSize = 16,
+            FontSize = 22,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
             VerticalAlignment = VerticalAlignment.Bottom
         };
-        Grid.SetRow(s.PlayerSpeed, 1);
         Grid.SetColumn(s.PlayerSpeed, 0);
-        g.Children.Add(s.PlayerSpeed);
+        topRow.Children.Add(s.PlayerSpeed);
 
+        s.Delta = new TextBlock
+        {
+            Text = "",
+            FontSize = 13,
+            FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(5, 0, 0, 0)
+        };
+        Grid.SetColumn(s.Delta, 1);
+        topRow.Children.Add(s.Delta);
+        outerStack.Children.Add(topRow);
+
+        // Bottom line: clean session fastest benchmark
         s.FastestRef = new TextBlock
         {
-            Text = "/--",
-            FontSize = 11.5,
+            Text = "",
+            FontSize = 12,
             FontWeight = FontWeights.SemiBold,
             Foreground = TextMuted,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(3, 0, 0, 1)
+            Margin = new Thickness(6, 0, 6, 4)
         };
-        Grid.SetRow(s.FastestRef, 1);
-        Grid.SetColumn(s.FastestRef, 1);
-        g.Children.Add(s.FastestRef);
+        outerStack.Children.Add(s.FastestRef);
 
         s.Box = new Border
         {
             Background = CornerIdleBg,
-            BorderBrush = FormatHelpers.GetFrozenBrush("#1EFFFFFF"),
+            BorderBrush = FormatHelpers.GetFrozenBrush("#22FFFFFF"),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(3),
-            Padding = new Thickness(6, 3, 6, 3),
-            Margin = new Thickness(2, 0, 2, 0),
-            MinWidth = 68,
-            Child = g
+            CornerRadius = new CornerRadius(4),
+            Margin = new Thickness(2.5, 0, 2.5, 0),
+            MinWidth = 78,
+            Child = outerStack
         };
 
         return s;
@@ -486,14 +478,12 @@ public sealed class InputsWindow : OverlayWindowBase
 
         foreach (var slot in _cornerSlots)
         {
-            slot.Label.FontFamily = uiFont;
-            slot.Label.FontSize = FontSz(9.5);
             slot.Delta.FontFamily = monoFont;
-            slot.Delta.FontSize = FontSz(10.5);
+            slot.Delta.FontSize = FontSz(13);
             slot.PlayerSpeed.FontFamily = monoFont;
-            slot.PlayerSpeed.FontSize = FontSz(16);
+            slot.PlayerSpeed.FontSize = FontSz(22);
             slot.FastestRef.FontFamily = monoFont;
-            slot.FastestRef.FontSize = FontSz(11.5);
+            slot.FastestRef.FontSize = FontSz(12);
         }
 
         // 100% Modular visibility + clean divider management
@@ -657,19 +647,25 @@ public sealed class InputsWindow : OverlayWindowBase
     {
         float conv = Settings.UseImperialUnits ? 2.236936f : 3.6f;
         var list = inp.RecentCorners;
+        bool native = IsIRacingNative;
+
+        // Progressive visual hierarchy: slot 0 (most recent corner you just drove) is brightest,
+        // slots 1..3 fade softly so your eye immediately lands on the latest corner without labels!
+        double[] slotOpacities = { 1.0, 0.82, 0.66, 0.52 };
 
         for (int i = 0; i < 4; i++)
         {
             var slot = _cornerSlots[i];
+            slot.Box.Opacity = slotOpacities[i];
+
             if (i >= list.Count)
             {
                 slot.Box.Background = CornerIdleBg;
                 slot.Box.BorderBrush = FormatHelpers.GetFrozenBrush("#18FFFFFF");
-                slot.Label.Text = $"C{i + 1}";
-                slot.Label.Foreground = TextMuted;
+                slot.TopAccent.Background = Brushes.Transparent;
                 slot.PlayerSpeed.Text = "--";
                 slot.PlayerSpeed.Foreground = TextMuted;
-                slot.FastestRef.Text = "";
+                slot.FastestRef.Text = "★ --";
                 slot.Delta.Text = "";
                 continue;
             }
@@ -679,23 +675,31 @@ public sealed class InputsWindow : OverlayWindowBase
             int fSpd = (int)Math.Round(rec.SessionFastestMinMs * conv);
             int diff = pSpd - fSpd;
 
-            slot.Label.Text = rec.Label;
-            slot.Label.Foreground = rec.IsLiveCorner ? ClutchBrush : TextMuted;
-            slot.Box.Background = rec.IsLiveCorner ? CornerLiveBg : CornerIdleBg;
-            slot.Box.BorderBrush = rec.IsLiveCorner ? ClutchBrush : FormatHelpers.GetFrozenBrush("#24FFFFFF");
+            bool isLatest = i == 0;
+            Brush accentColor = rec.IsLiveCorner ? ClutchBrush : (native ? IRacingGold : ClutchBrush);
+
+            slot.TopAccent.Background = isLatest ? accentColor : Brushes.Transparent;
+            slot.Box.Background = rec.IsLiveCorner
+                ? CornerLiveBg
+                : (isLatest ? FormatHelpers.GetFrozenBrush("#1CFFFFFF") : CornerIdleBg);
+            slot.Box.BorderBrush = isLatest
+                ? accentColor
+                : FormatHelpers.GetFrozenBrush("#20FFFFFF");
 
             slot.PlayerSpeed.Text = pSpd.ToString();
             slot.PlayerSpeed.Foreground = rec.IsLiveCorner ? ClutchBrush : TextWhite;
 
             if (rec.HasFastestRef && fSpd > 10)
             {
-                slot.FastestRef.Text = $"/{fSpd}";
+                slot.FastestRef.Text = $"★ {fSpd}";
+                slot.FastestRef.Foreground = native ? IRacingGold : TextMuted;
                 slot.Delta.Text = diff > 0 ? $"+{diff}" : diff.ToString();
                 slot.Delta.Foreground = diff >= 0 ? DeltaGreen : DeltaRed;
             }
             else
             {
-                slot.FastestRef.Text = "";
+                slot.FastestRef.Text = rec.IsLiveCorner ? "LIVE" : "MIN";
+                slot.FastestRef.Foreground = TextMuted;
                 slot.Delta.Text = "";
             }
         }

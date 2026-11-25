@@ -221,17 +221,17 @@ public sealed class DemoTelemetryProvider
                 HasLapDelta = true,
                 RecentCorners = new List<CornerSpeedRecord>
                 {
-                    new() { Label = "T1",  PlayerMinMs = 68f / 3.6f, SessionFastestMinMs = 71f / 3.6f, HasFastestRef = true },
-                    new() { Label = "T7",  PlayerMinMs = 96f / 3.6f, SessionFastestMinMs = 94f / 3.6f, HasFastestRef = true },
-                    new() { Label = "T10", PlayerMinMs = 86f / 3.6f, SessionFastestMinMs = 89f / 3.6f, HasFastestRef = true },
                     new()
                     {
-                        Label = phase is >= 0.30 and < 0.65 ? "NOW" : "T18",
+                        Label = phase is >= 0.30 and < 0.65 ? "LIVE" : "",
                         PlayerMinMs = (phase is >= 0.30 and < 0.65 ? Math.Min(speedKmh, 140f) : 94f) / 3.6f,
                         SessionFastestMinMs = 96f / 3.6f,
                         HasFastestRef = true,
                         IsLiveCorner = phase is >= 0.30 and < 0.65
-                    }
+                    },
+                    new() { Label = "", PlayerMinMs = 86f / 3.6f, SessionFastestMinMs = 89f / 3.6f, HasFastestRef = true },
+                    new() { Label = "", PlayerMinMs = 96f / 3.6f, SessionFastestMinMs = 94f / 3.6f, HasFastestRef = true },
+                    new() { Label = "", PlayerMinMs = 68f / 3.6f, SessionFastestMinMs = 71f / 3.6f, HasFastestRef = true }
                 }
             },
             Fuel = new FuelTelemetry

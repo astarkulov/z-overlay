@@ -4,9 +4,8 @@ using System.Collections.Generic;
 namespace ApexHUD.Core.Telemetry;
 
 /// <summary>
-/// Racelab-style 4-corner apex minimum speed tracker:
-/// Tracks player's last 4 corners AND benchmarks each corner against the fastest driver's
-/// minimum speed in the same track sector (LapDistPct bucket) during the session.
+/// Tracks the player's last 4 actually driven corners (ordered NEWEST FIRST: index 0 = most recent / live)
+/// and benchmarks each corner against the fastest driver's minimum speed in the same track sector.
 /// </summary>
 public sealed class CornerSpeedTracker
 {
@@ -22,10 +21,10 @@ public sealed class CornerSpeedTracker
     private float _fastestClassLapSec = float.MaxValue;
 
     private bool _inCorner;
+    private float _entrySpeedMs;
     private float _curCornerMinMs = float.MaxValue;
     private float _curCornerApexPct;
     private float _recentMaxMs;
-    private int _cornerCounter;
 
     public CornerSpeedTracker()
     {
@@ -41,9 +40,9 @@ public sealed class CornerSpeedTracker
         _fastestCarIdx = -1;
         _fastestClassLapSec = float.MaxValue;
         _inCorner = false;
+        _entrySpeedMs = 0f;
         _curCornerMinMs = float.MaxValue;
         _recentMaxMs = 0f;
-        _cornerCounter = 0;
     }
 
     public List<CornerSpeedRecord> Update(
@@ -103,11 +102,9 @@ public sealed class CornerSpeedTracker
                         {
                             int bucket = Math.Clamp((int)(curPct * TrackBuckets) % TrackBuckets, 0, TrackBuckets - 1);
                             float existing = _fastestSectorMinMs[bucket];
-                            // Keep the highest-pace minimum speed seen cleanly at that sector
-                            if (existing <= 0.1f)
-                                _fastestSectorMinMs[bucket] = estSpeedMs;
-                            else
-                                _fastestSectorMinMs[bucket] = existing * 0.7f + estSpeedMs * 0.3f;
+                            _fastestSectorMinMs[bucket] = existing <= 0.1f
+                                ? estSpeedMs
+                                : existing * 0.7f + estSpeedMs * 0.3f;
                         }
                     }
                 }
@@ -115,20 +112,21 @@ public sealed class CornerSpeedTracker
             }
         }
 
-        // 2) Track player's corners (last 4 corners)
+        // 2) Track real corners driven by the player (requires genuine >= 12 km/h drop from entry)
         if (playerOnTrack && playerSpeedMs > 5.5f)
         {
             if (playerSpeedMs > _recentMaxMs) _recentMaxMs = playerSpeedMs;
-            else _recentMaxMs = Math.Max(playerSpeedMs, _recentMaxMs - 0.06f);
+            else _recentMaxMs = Math.Max(playerSpeedMs, _recentMaxMs - 0.04f);
 
             float steerDegAbs = Math.Abs(playerSteerRad * (180f / (float)Math.PI));
-            bool entering = playerBrake > 0.08f || (steerDegAbs > 24f && playerSpeedMs < _recentMaxMs - 2.5f);
+            bool entering = playerBrake > 0.10f || (steerDegAbs > 26f && playerSpeedMs < _recentMaxMs - 3.5f);
 
             if (!_inCorner)
             {
                 if (entering)
                 {
                     _inCorner = true;
+                    _entrySpeedMs = Math.Max(_recentMaxMs, playerSpeedMs);
                     _curCornerMinMs = playerSpeedMs;
                     _curCornerApexPct = playerLapDistPct;
                 }
@@ -141,21 +139,24 @@ public sealed class CornerSpeedTracker
                     _curCornerApexPct = playerLapDistPct;
                 }
 
-                bool exiting = playerBrake < 0.03f && playerThrottle > 0.25f && playerSpeedMs > _curCornerMinMs + 1.2f;
+                bool exiting = playerBrake < 0.03f && playerThrottle > 0.30f && playerSpeedMs > _curCornerMinMs + 1.8f;
                 if (exiting)
                 {
-                    _cornerCounter++;
-                    float refMin = LookupSectorFastestMinMs(_curCornerApexPct);
-                    _history.Add(new CornerSpeedRecord
+                    // Only record genuine corners (at least ~12.5 km/h drop from entry speed)
+                    if (_entrySpeedMs - _curCornerMinMs >= 3.5f)
                     {
-                        Label = $"T{((_cornerCounter - 1) % 16) + 1}",
-                        PlayerMinMs = _curCornerMinMs,
-                        SessionFastestMinMs = refMin > 5f ? refMin : _curCornerMinMs,
-                        HasFastestRef = refMin > 5f,
-                        IsLiveCorner = false
-                    });
-                    while (_history.Count > MaxHistory)
-                        _history.RemoveAt(0);
+                        float refMin = LookupSectorFastestMinMs(_curCornerApexPct);
+                        _history.Insert(0, new CornerSpeedRecord
+                        {
+                            Label = "",
+                            PlayerMinMs = _curCornerMinMs,
+                            SessionFastestMinMs = refMin > 5f ? refMin : _curCornerMinMs,
+                            HasFastestRef = refMin > 5f,
+                            IsLiveCorner = false
+                        });
+                        while (_history.Count > MaxHistory)
+                            _history.RemoveAt(_history.Count - 1);
+                    }
 
                     _inCorner = false;
                     _recentMaxMs = playerSpeedMs;
@@ -167,23 +168,21 @@ public sealed class CornerSpeedTracker
             _inCorner = false;
         }
 
-        // Return up to 4 records (if currently mid-corner, include live corner as the rightmost 4th slot)
+        // Return NEWEST FIRST (slot 0 = live corner or corner you just exited, slots 1..3 = older)
         var result = new List<CornerSpeedRecord>(MaxHistory);
-        if (_inCorner && _curCornerMinMs < 150f)
+        if (_inCorner && _curCornerMinMs < 150f && (_entrySpeedMs - _curCornerMinMs >= 2.5f))
         {
-            int takePrev = Math.Min(_history.Count, MaxHistory - 1);
-            for (int i = _history.Count - takePrev; i < _history.Count; i++)
-                result.Add(_history[i]);
-
             float refMin = LookupSectorFastestMinMs(_curCornerApexPct);
             result.Add(new CornerSpeedRecord
             {
-                Label = "NOW",
+                Label = "LIVE",
                 PlayerMinMs = _curCornerMinMs,
                 SessionFastestMinMs = refMin > 5f ? refMin : _curCornerMinMs,
                 HasFastestRef = refMin > 5f,
                 IsLiveCorner = true
             });
+            for (int i = 0; i < _history.Count && result.Count < MaxHistory; i++)
+                result.Add(_history[i]);
         }
         else
         {
