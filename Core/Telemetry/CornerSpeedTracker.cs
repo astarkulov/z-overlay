@@ -4,18 +4,27 @@ using System.Collections.Generic;
 namespace ApexHUD.Core.Telemetry;
 
 /// <summary>
-/// Tracks the player's last 4 actually driven corners (ordered NEWEST FIRST: index 0 = most recent / live)
-/// and benchmarks each corner against the fastest driver's minimum speed in the same track sector.
+/// Tracks the player's last 4 actually driven corners (NEWEST FIRST: index 0 = live / most recent),
+/// auto-numbers discovered corners (T1, T2, ...) in track order around the lap,
+/// and benchmarks each corner against:
+///   - White:  player's current / last corner minimum speed
+///   - Green:  player's personal best (highest) minimum speed in this corner
+///   - Purple: minimum speed of the EXACT driver who holds the fastest lap in the player's class
 /// </summary>
 public sealed class CornerSpeedTracker
 {
     private const int TrackBuckets = 100; // 1% track-length resolution
+    private const int MaxCars = 64;
     private const int MaxHistory = 4;
 
-    private readonly float[] _prevCarPct = new float[64];
+    private readonly float[] _prevCarPct = new float[MaxCars];
+    private readonly float[] _prevCarBestLap = new float[MaxCars];
+    private readonly float[,] _carCurLapSectorMs = new float[MaxCars, TrackBuckets];
+    private readonly float[,] _carBestLapSectorMs = new float[MaxCars, TrackBuckets];
     private readonly float[] _playerSectorBestMs = new float[TrackBuckets];
-    private readonly float[] _fastestSectorMinMs = new float[TrackBuckets];
-    private readonly List<CornerSpeedRecord> _history = new(MaxHistory);
+
+    private readonly List<float> _knownApexPcts = new();
+    private readonly List<(float ApexPct, CornerSpeedRecord Record)> _history = new(MaxHistory);
 
     private double _lastUpdateSec = -1;
     private int _fastestCarIdx = -1;
@@ -35,8 +44,11 @@ public sealed class CornerSpeedTracker
     public void Reset()
     {
         Array.Fill(_prevCarPct, -1f);
+        Array.Fill(_prevCarBestLap, float.MaxValue);
+        Array.Clear(_carCurLapSectorMs);
+        Array.Clear(_carBestLapSectorMs);
         Array.Fill(_playerSectorBestMs, 0f);
-        Array.Fill(_fastestSectorMinMs, 0f);
+        _knownApexPcts.Clear();
         _history.Clear();
         _lastUpdateSec = -1;
         _fastestCarIdx = -1;
@@ -62,55 +74,82 @@ public sealed class CornerSpeedTracker
         float[] carBestLap,
         int[] carTrackSurface,
         bool[] carOnPitRoad,
-        Dictionary<int, YamlDriverMeta> drivers)
+        Dictionary<int, YamlDriverMeta> drivers,
+        Dictionary<int, YamlSessionResult>? yamlResults = null)
     {
         double dt = _lastUpdateSec > 0 ? sessionTimeSec - _lastUpdateSec : 0.016;
         _lastUpdateSec = sessionTimeSec;
 
-        // 1) Identify fastest driver in player's class and sample their speed per track sector
+        // 1) Track EVERY car in the player's class so we always have the exact fastest-lap holder's corner speeds
         if (dt is > 0.005 and < 0.25 && trackLengthMeters > 400f)
         {
             foreach (var kv in drivers)
             {
                 var meta = kv.Value;
                 int idx = meta.CarIdx;
-                if (idx < 0 || idx >= 64 || meta.CarIsPaceCar == 1 || meta.CarClassId != playerClassId) continue;
+                if (idx < 0 || idx >= MaxCars || meta.CarIsPaceCar == 1 || meta.IsSpectator == 1 || meta.CarClassId != playerClassId)
+                    continue;
 
+                // Resolve best lap from live telemetry OR YAML session results (works even when car is in pits)
                 float bl = carBestLap[idx];
-                if (bl > 10f && bl < _fastestClassLapSec)
+                if (bl <= 10f && yamlResults != null && yamlResults.TryGetValue(idx, out var yr) && yr.FastestTime > 10f)
+                    bl = yr.FastestTime;
+
+                // If this car just beat its own best lap, snapshot its current-lap sector speeds as its best-lap trace!
+                if (bl > 10f && bl < _prevCarBestLap[idx] - 0.005f)
+                {
+                    _prevCarBestLap[idx] = bl;
+                    for (int b = 0; b < TrackBuckets; b++)
+                    {
+                        float cur = _carCurLapSectorMs[idx, b];
+                        if (cur > 5f) _carBestLapSectorMs[idx, b] = cur;
+                    }
+                }
+
+                // Track the exact holder of the class fastest lap
+                if (bl > 10f && bl < _fastestClassLapSec - 0.001f)
                 {
                     _fastestClassLapSec = bl;
-                    if (_fastestCarIdx != idx)
-                    {
-                        _fastestCarIdx = idx;
-                        Array.Fill(_fastestSectorMinMs, 0f);
-                    }
+                    _fastestCarIdx = idx;
                 }
-            }
 
-            int refIdx = _fastestCarIdx >= 0 ? _fastestCarIdx : playerIdx;
-            if (refIdx >= 0 && refIdx < 64 && carTrackSurface[refIdx] == 3 && !carOnPitRoad[refIdx])
-            {
-                float curPct = carLapDistPct[refIdx];
-                float prevPct = _prevCarPct[refIdx];
-                if (curPct >= 0f && prevPct >= 0f)
+                // Sample live speed per 1% track bucket while on track
+                if (carTrackSurface[idx] == 3 && !carOnPitRoad[idx])
                 {
-                    float dPct = curPct - prevPct;
-                    if (dPct < -0.5f) dPct += 1f;
-                    if (dPct is > 0f and < 0.05f)
+                    float curPct = carLapDistPct[idx];
+                    float prevPct = _prevCarPct[idx];
+                    if (curPct >= 0f && prevPct >= 0f)
                     {
-                        float estSpeedMs = (float)(dPct * trackLengthMeters / dt);
-                        if (estSpeedMs is > 8f and < 115f)
+                        float dPct = curPct - prevPct;
+                        if (dPct < -0.5f)
                         {
-                            int bucket = Math.Clamp((int)(curPct * TrackBuckets) % TrackBuckets, 0, TrackBuckets - 1);
-                            float existing = _fastestSectorMinMs[bucket];
-                            _fastestSectorMinMs[bucket] = existing <= 0.1f
-                                ? estSpeedMs
-                                : existing * 0.7f + estSpeedMs * 0.3f;
+                            // Crossed Start/Finish -> start fresh current-lap trace (keep best-lap trace intact!)
+                            dPct += 1f;
+                            for (int b = 0; b < TrackBuckets; b++)
+                                _carCurLapSectorMs[idx, b] = 0f;
+                        }
+
+                        if (dPct is > 0f and < 0.05f)
+                        {
+                            float estSpeedMs = idx == playerIdx && playerOnTrack
+                                ? playerSpeedMs
+                                : (float)(dPct * trackLengthMeters / dt);
+                            if (estSpeedMs is > 6f and < 115f)
+                            {
+                                int bucket = Math.Clamp((int)(curPct * TrackBuckets) % TrackBuckets, 0, TrackBuckets - 1);
+                                float existing = _carCurLapSectorMs[idx, bucket];
+                                _carCurLapSectorMs[idx, bucket] = existing <= 0.1f
+                                    ? estSpeedMs
+                                    : Math.Min(existing, estSpeedMs);
+                            }
                         }
                     }
+                    _prevCarPct[idx] = curPct;
                 }
-                _prevCarPct[refIdx] = curPct;
+                else
+                {
+                    _prevCarPct[idx] = -1f;
+                }
             }
         }
 
@@ -144,28 +183,30 @@ public sealed class CornerSpeedTracker
                 bool exiting = playerBrake < 0.03f && playerThrottle > 0.30f && playerSpeedMs > _curCornerMinMs + 1.8f;
                 if (exiting)
                 {
-                    // Only record genuine corners (at least ~12.5 km/h drop from entry speed)
                     if (_entrySpeedMs - _curCornerMinMs >= 3.5f)
                     {
+                        string turnLabel = RegisterAndGetTurnLabel(_curCornerApexPct);
+
                         float prevPb = LookupPlayerBestMs(_curCornerApexPct);
                         float newPb = Math.Max(prevPb, _curCornerMinMs);
                         RecordPlayerBestMs(_curCornerApexPct, newPb);
 
-                        float refFast = LookupSectorFastestMinMs(_curCornerApexPct);
-                        if (refFast > 5f && newPb > refFast) refFast = newPb;
+                        float refFast = LookupFastestDriverCornerMs(_curCornerApexPct, playerIdx);
 
-                        _history.Insert(0, new CornerSpeedRecord
+                        _history.Insert(0, (_curCornerApexPct, new CornerSpeedRecord
                         {
-                            Label = "",
+                            Label = turnLabel,
                             PlayerMinMs = _curCornerMinMs,
                             PlayerBestMinMs = newPb,
-                            SessionFastestMinMs = refFast > 5f ? refFast : newPb,
+                            SessionFastestMinMs = refFast,
                             HasBestRef = true,
                             HasFastestRef = refFast > 5f,
                             IsLiveCorner = false
-                        });
+                        }));
                         while (_history.Count > MaxHistory)
                             _history.RemoveAt(_history.Count - 1);
+
+                        RefreshHistoryLabelsAndRefs(playerIdx);
                     }
 
                     _inCorner = false;
@@ -182,27 +223,93 @@ public sealed class CornerSpeedTracker
         var result = new List<CornerSpeedRecord>(MaxHistory);
         if (_inCorner && _curCornerMinMs < 150f && (_entrySpeedMs - _curCornerMinMs >= 2.5f))
         {
+            string liveLabel = LookupNearestTurnLabel(_curCornerApexPct);
             float pb = LookupPlayerBestMs(_curCornerApexPct);
-            float refFast = LookupSectorFastestMinMs(_curCornerApexPct);
+            float refFast = LookupFastestDriverCornerMs(_curCornerApexPct, playerIdx);
             result.Add(new CornerSpeedRecord
             {
-                Label = "LIVE",
+                Label = liveLabel,
                 PlayerMinMs = _curCornerMinMs,
                 PlayerBestMinMs = pb > 5f ? pb : _curCornerMinMs,
-                SessionFastestMinMs = refFast > 5f ? refFast : (pb > 5f ? pb : _curCornerMinMs),
+                SessionFastestMinMs = refFast,
                 HasBestRef = pb > 5f,
                 HasFastestRef = refFast > 5f,
                 IsLiveCorner = true
             });
             for (int i = 0; i < _history.Count && result.Count < MaxHistory; i++)
-                result.Add(_history[i]);
+                result.Add(_history[i].Record);
         }
         else
         {
-            result.AddRange(_history);
+            for (int i = 0; i < _history.Count; i++)
+                result.Add(_history[i].Record);
         }
 
         return result;
+    }
+
+    private string RegisterAndGetTurnLabel(float apexPct)
+    {
+        if (apexPct < 0f) return "T?";
+        apexPct = ((apexPct % 1f) + 1f) % 1f;
+
+        // Match existing discovered corner within +-2.6% lap distance
+        for (int i = 0; i < _knownApexPcts.Count; i++)
+        {
+            float dist = CircularDist(apexPct, _knownApexPcts[i]);
+            if (dist <= 0.026f)
+            {
+                // Smoothly refine stored apex center
+                _knownApexPcts[i] = _knownApexPcts[i] * 0.7f + apexPct * 0.3f;
+                return $"T{i + 1}";
+            }
+        }
+
+        // Insert in ascending track order so T1..Tn always match real turn sequence from Start/Finish
+        int insertIdx = 0;
+        while (insertIdx < _knownApexPcts.Count && _knownApexPcts[insertIdx] < apexPct)
+            insertIdx++;
+        _knownApexPcts.Insert(insertIdx, apexPct);
+        return $"T{insertIdx + 1}";
+    }
+
+    private string LookupNearestTurnLabel(float apexPct)
+    {
+        if (apexPct < 0f) return "T?";
+        apexPct = ((apexPct % 1f) + 1f) % 1f;
+
+        for (int i = 0; i < _knownApexPcts.Count; i++)
+        {
+            if (CircularDist(apexPct, _knownApexPcts[i]) <= 0.032f)
+                return $"T{i + 1}";
+        }
+
+        // Estimate turn index in sorted order for a brand-new corner on Lap 1
+        int rank = 0;
+        while (rank < _knownApexPcts.Count && _knownApexPcts[rank] < apexPct)
+            rank++;
+        return $"T{rank + 1}";
+    }
+
+    private void RefreshHistoryLabelsAndRefs(int playerIdx)
+    {
+        for (int i = 0; i < _history.Count; i++)
+        {
+            var (pct, rec) = _history[i];
+            rec.Label = LookupNearestTurnLabel(pct);
+            float fast = LookupFastestDriverCornerMs(pct, playerIdx);
+            if (fast > 5f)
+            {
+                rec.SessionFastestMinMs = fast;
+                rec.HasFastestRef = true;
+            }
+        }
+    }
+
+    private static float CircularDist(float a, float b)
+    {
+        float d = Math.Abs(a - b);
+        return d > 0.5f ? 1f - d : d;
     }
 
     private void RecordPlayerBestMs(float apexPct, float bestMs)
@@ -227,18 +334,36 @@ public sealed class CornerSpeedTracker
         return maxVal;
     }
 
-    private float LookupSectorFastestMinMs(float apexPct)
+    /// <summary>
+    /// Looks up the minimum speed in this corner of the EXACT driver who holds the class fastest lap.
+    /// Prefers their recorded fastest-lap trace, falling back to their live on-track sector trace.
+    /// </summary>
+    private float LookupFastestDriverCornerMs(float apexPct, int playerIdx)
     {
         if (apexPct < 0f) return 0f;
+        int targetIdx = _fastestCarIdx >= 0 ? _fastestCarIdx : playerIdx;
+        if (targetIdx < 0 || targetIdx >= MaxCars) return 0f;
+
         int center = Math.Clamp((int)(apexPct * TrackBuckets) % TrackBuckets, 0, TrackBuckets - 1);
-        float minVal = float.MaxValue;
+
+        // 1) Prefer the fastest-lap holder's snapshotted fastest-lap speed in this corner
+        float bestLapMin = float.MaxValue;
         for (int offset = -2; offset <= 2; offset++)
         {
             int b = (center + offset + TrackBuckets) % TrackBuckets;
-            float v = _fastestSectorMinMs[b];
-            if (v > 5f && v < minVal)
-                minVal = v;
+            float v = _carBestLapSectorMs[targetIdx, b];
+            if (v > 5f && v < bestLapMin) bestLapMin = v;
         }
-        return minVal < float.MaxValue ? minVal : 0f;
+        if (bestLapMin < float.MaxValue) return bestLapMin;
+
+        // 2) Fallback: fastest-lap holder's current-lap observed speed in this corner
+        float curLapMin = float.MaxValue;
+        for (int offset = -2; offset <= 2; offset++)
+        {
+            int b = (center + offset + TrackBuckets) % TrackBuckets;
+            float v = _carCurLapSectorMs[targetIdx, b];
+            if (v > 5f && v < curLapMin) curLapMin = v;
+        }
+        return curLapMin < float.MaxValue ? curLapMin : 0f;
     }
 }

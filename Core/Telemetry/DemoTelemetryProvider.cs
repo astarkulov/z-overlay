@@ -239,7 +239,7 @@ public sealed class DemoTelemetryProvider
                 {
                     new()
                     {
-                        Label = phase is >= 0.30 and < 0.65 ? "LIVE" : "",
+                        Label = "T14",
                         PlayerMinMs = (phase is >= 0.30 and < 0.65 ? Math.Min(speedKmh, 140f) : 94f) / 3.6f,
                         PlayerBestMinMs = 96f / 3.6f,
                         SessionFastestMinMs = 99f / 3.6f,
@@ -247,9 +247,9 @@ public sealed class DemoTelemetryProvider
                         HasFastestRef = true,
                         IsLiveCorner = phase is >= 0.30 and < 0.65
                     },
-                    new() { PlayerMinMs = 86f / 3.6f, PlayerBestMinMs = 88f / 3.6f, SessionFastestMinMs = 91f / 3.6f, HasBestRef = true, HasFastestRef = true },
-                    new() { PlayerMinMs = 96f / 3.6f, PlayerBestMinMs = 96f / 3.6f, SessionFastestMinMs = 98f / 3.6f, HasBestRef = true, HasFastestRef = true },
-                    new() { PlayerMinMs = 68f / 3.6f, PlayerBestMinMs = 70f / 3.6f, SessionFastestMinMs = 72f / 3.6f, HasBestRef = true, HasFastestRef = true }
+                    new() { Label = "T13", PlayerMinMs = 86f / 3.6f, PlayerBestMinMs = 88f / 3.6f, SessionFastestMinMs = 91f / 3.6f, HasBestRef = true, HasFastestRef = true },
+                    new() { Label = "T12", PlayerMinMs = 96f / 3.6f, PlayerBestMinMs = 96f / 3.6f, SessionFastestMinMs = 98f / 3.6f, HasBestRef = true, HasFastestRef = true },
+                    new() { Label = "T11", PlayerMinMs = 68f / 3.6f, PlayerBestMinMs = 70f / 3.6f, SessionFastestMinMs = 72f / 3.6f, HasBestRef = true, HasFastestRef = true }
                 }
             },
             Fuel = new FuelTelemetry

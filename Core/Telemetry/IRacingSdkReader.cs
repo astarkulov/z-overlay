@@ -273,6 +273,7 @@ public sealed class IRacingSdkReader : IDisposable
         float playerSteerRad = ReadFloat("SteeringWheelAngle");
         int playerClassId = _yamlMeta.DriversByIdx.TryGetValue(playerIdx, out var pMeta) ? pMeta.CarClassId : 0;
 
+        _yamlMeta.SessionResultsByNum.TryGetValue(sessionNum, out var cornerYamlResults);
         var recentCorners = _cornerTracker.Update(
             sessionTime,
             playerIdx,
@@ -288,7 +289,8 @@ public sealed class IRacingSdkReader : IDisposable
             _carBestLap,
             _carTrackSurface,
             _carOnPitRoad,
-            _yamlMeta.DriversByIdx);
+            _yamlMeta.DriversByIdx,
+            cornerYamlResults);
 
         var inputs = new InputTelemetry
         {

@@ -84,10 +84,12 @@ public sealed class InputsWindow : OverlayWindowBase
     private sealed class CornerSlotVisual
     {
         public Border Box = null!;
-        public Border TopAccent = null!;
-        public TextBlock PlayerSpeed = null!;   // WHITE: current / last
-        public TextBlock PersonalBest = null!;  // GREEN: my session max in this corner
-        public TextBlock SessionFastest = null!;// PURPLE: session fastest in this corner
+        public TextBlock TurnLabel = null!;      // e.g. T14
+        public TextBlock PlayerSpeed = null!;    // WHITE: current / last
+        public TextBlock Slash1 = null!;
+        public TextBlock PersonalBest = null!;   // GREEN: my session max in this corner
+        public TextBlock Slash2 = null!;
+        public TextBlock SessionFastest = null!; // PURPLE: fastest-lap holder's min speed
     }
 
     public InputsWindow(AppSettings settings) : base("Inputs", settings)
@@ -349,56 +351,80 @@ public sealed class InputsWindow : OverlayWindowBase
     private static CornerSlotVisual CreateCornerSlot()
     {
         var s = new CornerSlotVisual();
+        var slashBrush = FormatHelpers.GetFrozenBrush("#64748B");
 
-        var outerStack = new StackPanel();
-        s.TopAccent = new Border
+        var row = new StackPanel
         {
-            Height = 2,
-            Background = Brushes.Transparent,
-            Margin = new Thickness(0, 0, 0, 2)
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 2, 4, 2)
         };
-        outerStack.Children.Add(s.TopAccent);
 
-        // Top: BIG WHITE current / last corner min speed
+        // Turn number on the left + space (e.g. "T14 ")
+        s.TurnLabel = new TextBlock
+        {
+            Text = "T-",
+            FontSize = 11.5,
+            FontWeight = FontWeights.Bold,
+            Foreground = TextMuted,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 5, 0)
+        };
+        row.Children.Add(s.TurnLabel);
+
+        // Single-row slash speeds: WHITE / GREEN / PURPLE
         s.PlayerSpeed = new TextBlock
         {
             Text = "--",
-            FontSize = 18,
+            FontSize = 12.5,
             FontWeight = FontWeights.Bold,
             Foreground = TextWhite,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(4, 0, 4, 0)
+            VerticalAlignment = VerticalAlignment.Center
         };
-        outerStack.Children.Add(s.PlayerSpeed);
+        row.Children.Add(s.PlayerSpeed);
 
-        // Bottom row: GREEN (my max / PB) on left | PURPLE (session fastest) on right
-        var refsRow = new Grid { Margin = new Thickness(4, 0, 4, 2) };
-        refsRow.ColumnDefinitions.Add(new ColumnDefinition());
-        refsRow.ColumnDefinitions.Add(new ColumnDefinition());
+        s.Slash1 = new TextBlock
+        {
+            Text = "/",
+            FontSize = 11.5,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = slashBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(1, 0, 1, 0)
+        };
+        row.Children.Add(s.Slash1);
 
         s.PersonalBest = new TextBlock
         {
             Text = "--",
-            FontSize = 11.5,
+            FontSize = 12,
             FontWeight = FontWeights.Bold,
             Foreground = DeltaGreen,
-            HorizontalAlignment = HorizontalAlignment.Left
+            VerticalAlignment = VerticalAlignment.Center
         };
-        Grid.SetColumn(s.PersonalBest, 0);
-        refsRow.Children.Add(s.PersonalBest);
+        row.Children.Add(s.PersonalBest);
+
+        s.Slash2 = new TextBlock
+        {
+            Text = "/",
+            FontSize = 11.5,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = slashBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(1, 0, 1, 0)
+        };
+        row.Children.Add(s.Slash2);
 
         s.SessionFastest = new TextBlock
         {
             Text = "--",
-            FontSize = 11.5,
+            FontSize = 12,
             FontWeight = FontWeights.Bold,
             Foreground = PurpleFastest,
-            HorizontalAlignment = HorizontalAlignment.Right
+            VerticalAlignment = VerticalAlignment.Center
         };
-        Grid.SetColumn(s.SessionFastest, 1);
-        refsRow.Children.Add(s.SessionFastest);
-
-        outerStack.Children.Add(refsRow);
+        row.Children.Add(s.SessionFastest);
 
         s.Box = new Border
         {
@@ -407,8 +433,7 @@ public sealed class InputsWindow : OverlayWindowBase
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(3),
             Margin = new Thickness(1.5, 0, 1.5, 0),
-            MinWidth = 58,
-            Child = outerStack
+            Child = row
         };
 
         return s;
@@ -480,12 +505,18 @@ public sealed class InputsWindow : OverlayWindowBase
 
         foreach (var slot in _cornerSlots)
         {
+            slot.TurnLabel.FontFamily = monoFont;
+            slot.TurnLabel.FontSize = FontSz(11);
             slot.PlayerSpeed.FontFamily = monoFont;
-            slot.PlayerSpeed.FontSize = FontSz(18);
+            slot.PlayerSpeed.FontSize = FontSz(12.5);
+            slot.Slash1.FontFamily = monoFont;
+            slot.Slash1.FontSize = FontSz(11);
             slot.PersonalBest.FontFamily = monoFont;
-            slot.PersonalBest.FontSize = FontSz(11.5);
+            slot.PersonalBest.FontSize = FontSz(12);
+            slot.Slash2.FontFamily = monoFont;
+            slot.Slash2.FontSize = FontSz(11);
             slot.SessionFastest.FontFamily = monoFont;
-            slot.SessionFastest.FontSize = FontSz(11.5);
+            slot.SessionFastest.FontSize = FontSz(12);
         }
 
         // 100% Modular visibility + clean divider management
@@ -663,7 +694,8 @@ public sealed class InputsWindow : OverlayWindowBase
             {
                 slot.Box.Background = CornerIdleBg;
                 slot.Box.BorderBrush = FormatHelpers.GetFrozenBrush("#18FFFFFF");
-                slot.TopAccent.Background = Brushes.Transparent;
+                slot.TurnLabel.Text = "T-";
+                slot.TurnLabel.Foreground = TextMuted;
                 slot.PlayerSpeed.Text = "--";
                 slot.PlayerSpeed.Foreground = TextMuted;
                 slot.PersonalBest.Text = "--";
@@ -679,7 +711,6 @@ public sealed class InputsWindow : OverlayWindowBase
             bool isLatest = i == 0;
             Brush accentColor = rec.IsLiveCorner ? ClutchBrush : (native ? IRacingGold : TextWhite);
 
-            slot.TopAccent.Background = isLatest ? accentColor : Brushes.Transparent;
             slot.Box.Background = rec.IsLiveCorner
                 ? CornerLiveBg
                 : (isLatest ? FormatHelpers.GetFrozenBrush("#1CFFFFFF") : CornerIdleBg);
@@ -687,7 +718,10 @@ public sealed class InputsWindow : OverlayWindowBase
                 ? accentColor
                 : FormatHelpers.GetFrozenBrush("#22FFFFFF");
 
-            // White = current/last, Green = my PB max, Purple = session fastest
+            slot.TurnLabel.Text = string.IsNullOrEmpty(rec.Label) ? "T-" : rec.Label;
+            slot.TurnLabel.Foreground = isLatest ? accentColor : TextMuted;
+
+            // Single row: Turn + space + WHITE (current/last) / GREEN (my PB) / PURPLE (fastest-lap holder)
             slot.PlayerSpeed.Text = curSpd.ToString();
             slot.PlayerSpeed.Foreground = TextWhite;
 
