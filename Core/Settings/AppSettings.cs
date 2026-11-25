@@ -23,10 +23,11 @@ public sealed class AppSettings
     public bool ShowOnlyWhenIRacingFocused { get; set; } = true;
 
     // Appearance & Typography
+    public string UiSkin { get; set; } = "IRacingNative"; // IRacingNative | ApexCarbon
     public double GlobalScale { get; set; } = DefaultGlobalScale();
     public double HudFontScale { get; set; } = 1.05;      // 0.80 .. 1.35 internal font size multiplier
-    public double BackgroundOpacity { get; set; } = 0.62;
-    public string ThemePreset { get; set; } = "CarbonGlass";
+    public double BackgroundOpacity { get; set; } = 0.82;
+    public string ThemePreset { get; set; } = "IRacingNative";
     public string UiFontFamily { get; set; } = "Segoe UI Variable Text";
     public string MonoFontFamily { get; set; } = "Cascadia Mono";
 
@@ -159,6 +160,7 @@ public sealed class AppSettings
                 var loaded = JsonSerializer.Deserialize<AppSettings>(json);
                 if (loaded != null)
                 {
+                    if (string.IsNullOrWhiteSpace(loaded.UiSkin)) loaded.UiSkin = "IRacingNative";
                     if (loaded.GlobalScale < 0.6) loaded.GlobalScale = DefaultGlobalScale();
                     if (loaded.HudFontScale < 0.75 || loaded.HudFontScale > 1.4) loaded.HudFontScale = 1.05;
                     if (loaded.BackgroundOpacity <= 0.0 && !json.Contains("BackgroundOpacity"))

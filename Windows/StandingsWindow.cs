@@ -15,9 +15,12 @@ namespace ApexHUD.Windows;
 public sealed class StandingsWindow : OverlayWindowBase
 {
     private readonly Border _outerBorder;
+    private readonly StackPanel _rootStack;
     private readonly Border _headerHost;
     private readonly Grid _headerGrid;
     private readonly Grid _legendGrid;
+    private readonly Border _legendDivider;
+    private readonly TextBlock _nativeTitleText;
     private readonly TextBlock _trackText;
     private readonly TextBlock _sessionTypeText;
     private readonly TextBlock _lapsText;
@@ -27,12 +30,18 @@ public sealed class StandingsWindow : OverlayWindowBase
     private FontFamily _uiFont = new("Segoe UI Variable Text, Segoe UI");
     private FontFamily _monoFont = new("Cascadia Mono, Consolas");
 
-    private static readonly SolidColorBrush BgPlayer = FormatHelpers.GetFrozenBrush("#4D2563EB");
-    private static readonly SolidColorBrush BgRowAlt = FormatHelpers.GetFrozenBrush("#12FFFFFF");
+    private static readonly SolidColorBrush BgPlayerCarbon = FormatHelpers.GetFrozenBrush("#4D2563EB");
+    private static readonly SolidColorBrush BgPlayerNative = FormatHelpers.GetFrozenBrush("#2CF2B830");
+    private static readonly SolidColorBrush BgRowAltCarbon = FormatHelpers.GetFrozenBrush("#12FFFFFF");
+    private static readonly SolidColorBrush BgRowAltNative = FormatHelpers.GetFrozenBrush("#07FFFFFF");
     private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#22FFFFFF");
     private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
     private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#E6EDF7");
     private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#CBD5E1");
+    private static readonly SolidColorBrush NativeMuted = FormatHelpers.GetFrozenBrush("#9CA3AF");
+    private static readonly SolidColorBrush DarkText = FormatHelpers.GetFrozenBrush("#111318");
+    private static readonly SolidColorBrush IRacingGold = FormatHelpers.GetFrozenBrush("#F2B830");
+    private static readonly SolidColorBrush IRacingGoldBright = FormatHelpers.GetFrozenBrush("#F5C84C");
     private static readonly SolidColorBrush AccentSky = FormatHelpers.GetFrozenBrush("#7DD3FC");
     private static readonly SolidColorBrush GainGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
     private static readonly SolidColorBrush LossRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
@@ -50,10 +59,10 @@ public sealed class StandingsWindow : OverlayWindowBase
             SnapsToDevicePixels = true
         };
 
-        var stack = new StackPanel { Effect = HudTextShadow };
-        Grid.SetIsSharedSizeScope(stack, true);
+        _rootStack = new StackPanel { Effect = GetActiveShadow() };
+        Grid.SetIsSharedSizeScope(_rootStack, true);
 
-        _headerGrid = new Grid { Height = 26 };
+        _headerGrid = new Grid { Height = 28, Margin = new Thickness(0, 2, 0, 0) };
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -61,9 +70,19 @@ public sealed class StandingsWindow : OverlayWindowBase
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(9, 0, 12, 0)
+            Margin = new Thickness(10, 0, 12, 0)
         };
-        leftTrack.Children.Add(new HudMetricIcon(HudIconKind.Flag, "#7DD3FC", 11.5) { Margin = new Thickness(0, 0, 5, 0) });
+        _nativeTitleText = new TextBlock
+        {
+            Text = "STANDINGS",
+            FontSize = 11.5,
+            FontWeight = FontWeights.Bold,
+            Foreground = IRacingGold,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        leftTrack.Children.Add(_nativeTitleText);
+        leftTrack.Children.Add(new HudMetricIcon(HudIconKind.Flag, "#7DD3FC", 11) { Margin = new Thickness(0, 0, 5, 0) });
         _trackText = new TextBlock
         {
             Text = "Standings",
@@ -122,35 +141,46 @@ public sealed class StandingsWindow : OverlayWindowBase
         _headerGrid.Children.Add(rightMeta);
 
         _headerHost = new Border { Child = _headerGrid };
-        stack.Children.Add(_headerHost);
+        _rootStack.Children.Add(_headerHost);
 
         _legendGrid = new Grid { Height = 20 };
-        stack.Children.Add(_legendGrid);
-        stack.Children.Add(new Border { Height = 1, Background = Hairline });
+        _rootStack.Children.Add(_legendGrid);
+        _legendDivider = new Border { Height = 1, Background = Hairline };
+        _rootStack.Children.Add(_legendDivider);
 
-        _bodyPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 2) };
-        stack.Children.Add(_bodyPanel);
+        _bodyPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 4) };
+        _rootStack.Children.Add(_bodyPanel);
 
-        _outerBorder.Child = stack;
+        _outerBorder.Child = _rootStack;
         AttachOverlayRoot(_outerBorder, "Standings");
     }
 
     protected override void OnAppearanceUpdated()
     {
         if (_outerBorder == null) return;
+        bool native = IsIRacingNative;
         _uiFont = GetUiFont();
         _monoFont = GetMonoFont();
 
         _outerBorder.Background = MakeBackdropBrush(1.0);
         _outerBorder.BorderBrush = MakeBorderBrush();
-        _headerGrid.Background = MakeBackdropBrush(1.18, 0x0F, 0x13, 0x1C);
-        _legendGrid.Background = MakeBackdropBrush(0.78, 0x0A, 0x0D, 0x13);
+        _outerBorder.CornerRadius = GetCardRadius();
+        _rootStack.Effect = GetActiveShadow();
+
+        _headerGrid.Background = native ? Brushes.Transparent : MakeBackdropBrush(1.18, 0x0F, 0x13, 0x1C);
+        _legendGrid.Background = native ? Brushes.Transparent : MakeBackdropBrush(0.78, 0x0A, 0x0D, 0x13);
+        _legendDivider.Opacity = native ? 0.35 : 1.0;
         _headerHost.Visibility = Settings.ShowStandingsHeader ? Visibility.Visible : Visibility.Collapsed;
 
+        _nativeTitleText.Visibility = native ? Visibility.Visible : Visibility.Collapsed;
+        _nativeTitleText.FontFamily = _uiFont;
+        _nativeTitleText.FontSize = FontSz(11);
         _trackText.FontFamily = _uiFont;
-        _trackText.FontSize = FontSz(12);
+        _trackText.FontSize = FontSz(11.5);
+        _trackText.Foreground = native ? NativeMuted : TextWhite;
         _sessionTypeText.FontFamily = _uiFont;
         _sessionTypeText.FontSize = FontSz(10.5);
+        _sessionTypeText.Foreground = native ? IRacingGold : AccentSky;
         _lapsText.FontFamily = _monoFont;
         _lapsText.FontSize = FontSz(11.5);
         _timerText.FontFamily = _monoFont;
@@ -281,7 +311,12 @@ public sealed class StandingsWindow : OverlayWindowBase
 
     private UIElement BuildClassStrip(StandingsClassGroup group)
     {
-        var strip = new Grid { Height = 23, Background = MakeBackdropBrush(1.08, 0x13, 0x18, 0x24) };
+        bool native = IsIRacingNative;
+        var strip = new Grid
+        {
+            Height = 23,
+            Background = native ? FormatHelpers.GetFrozenBrush("#10FFFFFF") : MakeBackdropBrush(1.08, 0x13, 0x18, 0x24)
+        };
         strip.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3) });
         strip.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         strip.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -346,6 +381,7 @@ public sealed class StandingsWindow : OverlayWindowBase
 
     private UIElement BuildDriverRow(StandingsEntry d, bool alt)
     {
+        bool native = IsIRacingNative;
         double rowH = Math.Round(25 * Math.Max(1.0, Settings.HudFontScale * 0.95));
         var g = new Grid { Height = rowH };
         ConfigureRowColumns(g);
@@ -354,8 +390,35 @@ public sealed class StandingsWindow : OverlayWindowBase
         Grid.SetColumn(accent, 0);
         g.Children.Add(accent);
 
-        AddCell(g, 1, d.ClassPosition.ToString(), _monoFont, FontSz(13.5),
-            d.IsPlayer ? AccentSky : TextWhite, FontWeights.Bold, HorizontalAlignment.Right, minW: 20);
+        // Position: solid gold pill with dark text for player in iRacing Native, gold numbers for others!
+        if (native && d.IsPlayer)
+        {
+            var posPill = new Border
+            {
+                Background = IRacingGold,
+                CornerRadius = new CornerRadius(3),
+                MinWidth = 24,
+                Padding = new Thickness(4, 0, 4, 0),
+                Margin = new Thickness(4, 3, 4, 3),
+                Child = new TextBlock
+                {
+                    Text = d.ClassPosition.ToString(),
+                    FontFamily = _monoFont,
+                    FontSize = FontSz(13),
+                    FontWeight = FontWeights.Bold,
+                    Foreground = DarkText,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+            Grid.SetColumn(posPill, 1);
+            g.Children.Add(posPill);
+        }
+        else
+        {
+            AddCell(g, 1, d.ClassPosition.ToString(), _monoFont, FontSz(13.5),
+                native ? IRacingGold : (d.IsPlayer ? AccentSky : TextWhite), FontWeights.Bold, HorizontalAlignment.Right, minW: 22);
+        }
 
         if (Settings.ShowStandingsPosDelta)
         {
@@ -368,18 +431,18 @@ public sealed class StandingsWindow : OverlayWindowBase
         {
             var numBox = new Border
             {
-                Background = FormatHelpers.GetFrozenBrush("#24FFFFFF"),
+                Background = native ? Brushes.Transparent : FormatHelpers.GetFrozenBrush("#24FFFFFF"),
                 CornerRadius = new CornerRadius(2),
                 MinWidth = 26,
-                Padding = new Thickness(4, 0, 4, 0),
+                Padding = native ? new Thickness(2, 0, 2, 0) : new Thickness(4, 0, 4, 0),
                 Margin = new Thickness(1, 3, 4, 3),
                 Child = new TextBlock
                 {
-                    Text = string.IsNullOrEmpty(d.CarNumber) ? "--" : d.CarNumber,
+                    Text = string.IsNullOrEmpty(d.CarNumber) ? "--" : (native ? $"#{d.CarNumber}" : d.CarNumber),
                     FontFamily = _monoFont,
                     FontSize = FontSz(11.5),
-                    FontWeight = FontWeights.Bold,
-                    Foreground = TextSoft,
+                    FontWeight = native ? FontWeights.SemiBold : FontWeights.Bold,
+                    Foreground = d.IsPlayer && native ? IRacingGoldBright : (native ? NativeMuted : TextSoft),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 }
@@ -401,7 +464,9 @@ public sealed class StandingsWindow : OverlayWindowBase
             FontFamily = _uiFont,
             FontSize = FontSz(13.5),
             FontWeight = d.IsPlayer ? FontWeights.Bold : FontWeights.SemiBold,
-            Foreground = d.IsPlayer ? TextWhite : (d.IsOnPitRoad ? TextMuted : TextWhite),
+            Foreground = d.IsPlayer
+                ? (native ? IRacingGoldBright : TextWhite)
+                : (d.IsOnPitRoad ? TextMuted : TextWhite),
             VerticalAlignment = VerticalAlignment.Center,
             MaxWidth = 230,
             TextTrimming = TextTrimming.CharacterEllipsis,
@@ -458,7 +523,8 @@ public sealed class StandingsWindow : OverlayWindowBase
                 ? $"+{d.LapsDown}L"
                 : FormatHelpers.FormatGap(gapVal);
         AddCell(g, 9, gapStr, _monoFont, FontSz(13.5),
-            d.ClassPosition == 1 ? AccentSky : TextWhite, FontWeights.Bold, HorizontalAlignment.Right, minW: 42);
+            d.IsPlayer && native ? IRacingGoldBright : (d.ClassPosition == 1 ? (native ? IRacingGold : AccentSky) : TextWhite),
+            FontWeights.Bold, HorizontalAlignment.Right, minW: 42);
 
         if (Settings.ShowStandingsLastLap)
         {
@@ -510,7 +576,9 @@ public sealed class StandingsWindow : OverlayWindowBase
 
         return new Border
         {
-            Background = d.IsPlayer ? BgPlayer : (alt ? BgRowAlt : Brushes.Transparent),
+            Background = d.IsPlayer
+                ? (native ? BgPlayerNative : BgPlayerCarbon)
+                : (alt ? (native ? BgRowAltNative : BgRowAltCarbon) : Brushes.Transparent),
             Child = g
         };
     }

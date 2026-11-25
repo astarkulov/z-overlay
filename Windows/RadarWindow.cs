@@ -66,7 +66,7 @@ public sealed class RadarWindow : OverlayWindowBase
 
     protected override void OnAppearanceUpdated()
     {
-        _radar?.SetBackdropOpacity(Settings.BackgroundOpacity);
+        _radar?.SetBackdropOpacity(Settings.BackgroundOpacity, IsIRacingNative);
         if (_calloutText != null) _calloutText.FontFamily = GetMonoFont();
     }
 

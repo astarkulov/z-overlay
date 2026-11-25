@@ -18,6 +18,7 @@ public sealed class RelativeWindow : OverlayWindowBase
     private const int MaxRowPool = 13;
 
     private readonly Border _outerBorder;
+    private readonly StackPanel _rootStack;
     private readonly Border _headerHost;
     private readonly Grid _headerGrid;
     private readonly TextBlock _titleText;
@@ -32,28 +33,35 @@ public sealed class RelativeWindow : OverlayWindowBase
     private readonly TextBlock _flagText;
     private readonly List<RowVisual> _rows = new(MaxRowPool);
 
-    private static readonly SolidColorBrush BgPlayer = FormatHelpers.GetFrozenBrush("#4D2563EB");
-    private static readonly SolidColorBrush BgRowAlt = FormatHelpers.GetFrozenBrush("#12FFFFFF");
+    private static readonly SolidColorBrush BgPlayerCarbon = FormatHelpers.GetFrozenBrush("#4D2563EB");
+    private static readonly SolidColorBrush BgPlayerNative = FormatHelpers.GetFrozenBrush("#2CF2B830");
+    private static readonly SolidColorBrush BgRowAltCarbon = FormatHelpers.GetFrozenBrush("#12FFFFFF");
+    private static readonly SolidColorBrush BgRowAltNative = FormatHelpers.GetFrozenBrush("#07FFFFFF");
     private static readonly SolidColorBrush Hairline = FormatHelpers.GetFrozenBrush("#22FFFFFF");
     private static readonly SolidColorBrush TextWhite = FormatHelpers.GetFrozenBrush("#FFFFFF");
     private static readonly SolidColorBrush TextSoft = FormatHelpers.GetFrozenBrush("#E6EDF7");
     private static readonly SolidColorBrush TextMuted = FormatHelpers.GetFrozenBrush("#CBD5E1");
-    private static readonly SolidColorBrush DarkText = FormatHelpers.GetFrozenBrush("#0B0E14");
+    private static readonly SolidColorBrush NativeCarNumMuted = FormatHelpers.GetFrozenBrush("#9CA3AF");
+    private static readonly SolidColorBrush DarkText = FormatHelpers.GetFrozenBrush("#111318");
+    private static readonly SolidColorBrush IRacingGold = FormatHelpers.GetFrozenBrush("#F2B830");
+    private static readonly SolidColorBrush IRacingGoldBright = FormatHelpers.GetFrozenBrush("#F5C84C");
     private static readonly SolidColorBrush LapAheadBrush = FormatHelpers.GetFrozenBrush("#FF6B81");
-    private static readonly SolidColorBrush LapDownBrush = FormatHelpers.GetFrozenBrush("#67E8F9");
-    private static readonly SolidColorBrush PlayerAccent = FormatHelpers.GetFrozenBrush("#93C5FD");
+    private static readonly SolidColorBrush LapDownBrush = FormatHelpers.GetFrozenBrush("#60A5FA");
+    private static readonly SolidColorBrush PlayerAccentCarbon = FormatHelpers.GetFrozenBrush("#93C5FD");
     private static readonly SolidColorBrush FasterRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
     private static readonly SolidColorBrush SlowerGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
     private static readonly SolidColorBrush PitTagBg = FormatHelpers.GetFrozenBrush("#55F59E0B");
     private static readonly SolidColorBrush OutTagBg = FormatHelpers.GetFrozenBrush("#5538BDF8");
     private static readonly SolidColorBrush OffTagBg = FormatHelpers.GetFrozenBrush("#55EF4444");
     private static readonly SolidColorBrush AmberText = FormatHelpers.GetFrozenBrush("#FCD34D");
+    private static readonly SolidColorBrush CarNumBoxBg = FormatHelpers.GetFrozenBrush("#24FFFFFF");
 
     private sealed class RowVisual
     {
         public Border Container = null!;
         public Grid RowGrid = null!;
         public Border ClassBar = null!;
+        public Border PosPill = null!;
         public TextBlock Pos = null!;
         public Border CarNumBox = null!;
         public TextBlock CarNum = null!;
@@ -78,8 +86,8 @@ public sealed class RelativeWindow : OverlayWindowBase
             SnapsToDevicePixels = true
         };
 
-        var rootStack = new StackPanel { Effect = HudTextShadow };
-        Grid.SetIsSharedSizeScope(rootStack, true);
+        _rootStack = new StackPanel { Effect = GetActiveShadow() };
+        Grid.SetIsSharedSizeScope(_rootStack, true);
 
         _headerGrid = new Grid { Height = 26 };
         _headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -166,18 +174,18 @@ public sealed class RelativeWindow : OverlayWindowBase
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = _headerGrid
         };
-        rootStack.Children.Add(_headerHost);
+        _rootStack.Children.Add(_headerHost);
 
-        var rowsHost = new StackPanel { Margin = new Thickness(0, 1, 0, 2) };
+        var rowsHost = new StackPanel { Margin = new Thickness(0, 1, 0, 3) };
         for (int i = 0; i < MaxRowPool; i++)
         {
             var rv = CreateRowVisual();
             _rows.Add(rv);
             rowsHost.Children.Add(rv.Container);
         }
-        rootStack.Children.Add(rowsHost);
+        _rootStack.Children.Add(rowsHost);
 
-        _outerBorder.Child = rootStack;
+        _outerBorder.Child = _rootStack;
         AttachOverlayRoot(_outerBorder, "Relative");
     }
 
@@ -207,14 +215,23 @@ public sealed class RelativeWindow : OverlayWindowBase
     protected override void OnAppearanceUpdated()
     {
         if (_outerBorder == null) return;
+        bool native = IsIRacingNative;
+
         _outerBorder.Background = MakeBackdropBrush(1.0);
         _outerBorder.BorderBrush = MakeBorderBrush();
-        _headerGrid.Background = MakeBackdropBrush(1.18, 0x0F, 0x13, 0x1C);
+        _outerBorder.CornerRadius = GetCardRadius();
+        _rootStack.Effect = GetActiveShadow();
+
+        // In iRacing Native: unified seamless charcoal card with gold uppercase title (no harsh dark header bar!)
+        _headerGrid.Background = native ? Brushes.Transparent : MakeBackdropBrush(1.18, 0x0F, 0x13, 0x1C);
+        _headerHost.BorderThickness = new Thickness(0, 0, 0, native ? 0 : 1);
         _headerHost.Visibility = Settings.ShowRelativeHeader ? Visibility.Visible : Visibility.Collapsed;
 
         var uiFont = GetUiFont();
         var monoFont = GetMonoFont();
 
+        _titleText.Text = native ? "RELATIVE" : "Relative";
+        _titleText.Foreground = native ? IRacingGold : TextWhite;
         _titleText.FontFamily = uiFont;
         _titleText.FontSize = FontSz(11.5);
         _sofText.FontFamily = monoFont;
@@ -234,6 +251,8 @@ public sealed class RelativeWindow : OverlayWindowBase
         {
             rv.RowGrid.Height = rowH;
             rv.CarNumBox.Visibility = Settings.ShowRelativeCarNumber ? Visibility.Visible : Visibility.Collapsed;
+            rv.CarNumBox.Background = native ? Brushes.Transparent : CarNumBoxBg;
+            rv.CarNumBox.Padding = native ? new Thickness(2, 0, 2, 0) : new Thickness(4, 0, 4, 0);
             rv.BrandIcon.Visibility = Settings.ShowCarBrandIcons ? Visibility.Visible : Visibility.Collapsed;
             rv.LicBadge.Visibility = Settings.ShowRelativeLicense ? Visibility.Visible : Visibility.Collapsed;
             rv.IRating.Visibility = Settings.ShowRelativeIRating ? Visibility.Visible : Visibility.Collapsed;
@@ -244,7 +263,7 @@ public sealed class RelativeWindow : OverlayWindowBase
             rv.StatusText.FontFamily = uiFont;
             rv.StatusText.FontSize = FontSz(9.5);
             rv.Pos.FontFamily = monoFont;
-            rv.Pos.FontSize = FontSz(14);
+            rv.Pos.FontSize = FontSz(13.5);
             rv.CarNum.FontFamily = monoFont;
             rv.CarNum.FontSize = FontSz(12);
             rv.LicText.FontFamily = monoFont;
@@ -282,13 +301,19 @@ public sealed class RelativeWindow : OverlayWindowBase
         rv.Pos = new TextBlock
         {
             FontWeight = FontWeights.Bold,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            MinWidth = 22,
-            Margin = new Thickness(5, 0, 5, 0)
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
         };
-        Grid.SetColumn(rv.Pos, 1);
-        grid.Children.Add(rv.Pos);
+        rv.PosPill = new Border
+        {
+            CornerRadius = new CornerRadius(3),
+            MinWidth = 24,
+            Padding = new Thickness(4, 0, 4, 0),
+            Margin = new Thickness(4, 3, 4, 3),
+            Child = rv.Pos
+        };
+        Grid.SetColumn(rv.PosPill, 1);
+        grid.Children.Add(rv.PosPill);
 
         rv.CarNum = new TextBlock
         {
@@ -420,6 +445,7 @@ public sealed class RelativeWindow : OverlayWindowBase
 
         UpdateFlagBadge(snap);
 
+        bool native = IsIRacingNative;
         int count = Math.Min(MaxRowPool, snap.Relative.Count);
         for (int i = 0; i < MaxRowPool; i++)
         {
@@ -434,17 +460,30 @@ public sealed class RelativeWindow : OverlayWindowBase
             rv.Container.Visibility = Visibility.Visible;
 
             rv.Container.Background = e.IsPlayer
-                ? BgPlayer
-                : (i % 2 == 1 ? BgRowAlt : Brushes.Transparent);
+                ? (native ? BgPlayerNative : BgPlayerCarbon)
+                : (i % 2 == 1 ? (native ? BgRowAltNative : BgRowAltCarbon) : Brushes.Transparent);
 
             rv.ClassBar.Background = FormatHelpers.GetFrozenBrush(e.ClassColorHex);
             rv.Pos.Text = e.ClassPosition > 0 ? e.ClassPosition.ToString() : "-";
-            rv.CarNum.Text = string.IsNullOrEmpty(e.CarNumber) ? "--" : e.CarNumber;
+            rv.CarNum.Text = string.IsNullOrEmpty(e.CarNumber) ? "--" : (native ? $"#{e.CarNumber}" : e.CarNumber);
+            rv.CarNum.Foreground = e.IsPlayer && native ? IRacingGoldBright : (native ? NativeCarNumMuted : TextSoft);
             rv.BrandIcon.Brand = e.Brand;
             rv.Name.Text = e.DriverName;
 
+            // iRacing Native position badge: solid gold pill with dark text for player, gold numbers for others!
+            if (native && e.IsPlayer)
+            {
+                rv.PosPill.Background = IRacingGold;
+                rv.Pos.Foreground = DarkText;
+            }
+            else
+            {
+                rv.PosPill.Background = Brushes.Transparent;
+                rv.Pos.Foreground = native ? IRacingGold : (e.IsPlayer ? PlayerAccentCarbon : TextSoft);
+            }
+
             Brush nameColor = e.IsPlayer
-                ? TextWhite
+                ? (native ? IRacingGoldBright : TextWhite)
                 : e.LapRelation switch
                 {
                     LapRelation.LapAhead => LapAheadBrush,
@@ -452,7 +491,6 @@ public sealed class RelativeWindow : OverlayWindowBase
                     _ => TextWhite
                 };
 
-            rv.Pos.Foreground = e.IsPlayer ? PlayerAccent : TextSoft;
             rv.Name.Foreground = e.IsOnPitRoad && !e.IsPlayer ? TextMuted : nameColor;
             rv.Name.FontWeight = e.IsPlayer ? FontWeights.Bold : FontWeights.SemiBold;
 
@@ -504,7 +542,7 @@ public sealed class RelativeWindow : OverlayWindowBase
             }
 
             rv.Gap.Text = e.IsPlayer ? "0.0" : FormatHelpers.FormatGap(e.GapSeconds, signed: true);
-            rv.Gap.Foreground = e.IsPlayer ? PlayerAccent : nameColor;
+            rv.Gap.Foreground = e.IsPlayer ? (native ? IRacingGoldBright : PlayerAccentCarbon) : nameColor;
         }
     }
 

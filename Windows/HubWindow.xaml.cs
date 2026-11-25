@@ -539,6 +539,8 @@ public partial class HubWindow : Window
             HudFontScaleSlider.Value = fs;
             HudFontScaleVal.Text = $"{(int)Math.Round(fs * 100)}%";
 
+            UpdateSkinButtons();
+
             RadarAutoHideCheck.IsChecked = _settings.RadarAutoHideWhenClear;
             OnlyIRacingFocusCheck.IsChecked = _settings.ShowOnlyWhenIRacingFocused;
             AutoHideOutOfSimCheck.IsChecked = _settings.AutoHideOutOfSim;
@@ -645,6 +647,34 @@ public partial class HubWindow : Window
             SyncUiFromSettings();
             _onSettingsChanged();
         }
+    }
+
+    private void UpdateSkinButtons()
+    {
+        if (SkinIRacingBtn == null || SkinCarbonBtn == null) return;
+        var primary = (Style)FindResource("ModernPrimaryButton");
+        var normal = (Style)FindResource("ModernButton");
+        bool isNative = string.Equals(_settings.UiSkin, "IRacingNative", StringComparison.OrdinalIgnoreCase);
+        SkinIRacingBtn.Style = isNative ? primary : normal;
+        SkinCarbonBtn.Style = isNative ? normal : primary;
+    }
+
+    private void SkinIRacing_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.UiSkin = "IRacingNative";
+        _settings.ThemePreset = "IRacingNative";
+        _settings.BackgroundOpacity = 0.82;
+        SyncUiFromSettings();
+        _onSettingsChanged();
+    }
+
+    private void SkinCarbon_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.UiSkin = "ApexCarbon";
+        _settings.ThemePreset = "CarbonGlass";
+        _settings.BackgroundOpacity = 0.62;
+        SyncUiFromSettings();
+        _onSettingsChanged();
     }
 
     private void PresetCarbon_Click(object sender, RoutedEventArgs e)

@@ -206,7 +206,30 @@
                 <!-- PAGE 2: APPEARANCE & SCALE -->
                 <ScrollViewer x:Name="PageAppearance" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,4,22,16" Visibility="Collapsed">
                     <StackPanel>
-                        <TextBlock Text="БЫСТРЫЕ ПРЕСЕТЫ СТИЛЯ" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="СТИЛЬ ИНТЕРФЕЙСА (SKIN)" Style="{StaticResource SectionTitle}" />
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button x:Name="SkinIRacingBtn" Grid.Column="0" Style="{StaticResource ModernPrimaryButton}" Padding="12,12" Click="SkinIRacing_Click">
+                                <StackPanel>
+                                    <TextBlock Text="iRacing Native (Бесшовный)" FontSize="13.5" FontWeight="Bold" Foreground="#FFFFFFFF" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Графит #1A1D24 • Золото #F2B830 • Как родной UI" FontSize="10.5" Foreground="#FFE0F2FE" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="SkinCarbonBtn" Grid.Column="2" Style="{StaticResource ModernButton}" Padding="12,12" Click="SkinCarbon_Click">
+                                <StackPanel>
+                                    <TextBlock Text="Apex Carbon (Киберспорт)" FontSize="13.5" FontWeight="Bold" Foreground="#FFF8FAFC" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Тёмный карбон • Синий акцент • ТВ-контраст" FontSize="10.5" Foreground="#FF94A3B8" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <TextBlock Text="БЫСТРЫЕ ПРЕСЕТЫ ПРОЗРАЧНОСТИ" Style="{StaticResource SectionTitle}" />
                         <Grid Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />

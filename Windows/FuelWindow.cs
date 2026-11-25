@@ -15,6 +15,7 @@ namespace ApexHUD.Windows;
 public sealed class FuelWindow : OverlayWindowBase
 {
     private readonly Border _outerBorder;
+    private readonly StackPanel _rootStack;
     private readonly Grid _headerGrid;
     private readonly TextBlock _titleText;
     private readonly TextBlock _modeBadgeText;
@@ -49,6 +50,7 @@ public sealed class FuelWindow : OverlayWindowBase
     private static readonly SolidColorBrush AccentBlue = FormatHelpers.GetFrozenBrush("#3B82F6");
     private static readonly SolidColorBrush AccentSky = FormatHelpers.GetFrozenBrush("#7DD3FC");
     private static readonly SolidColorBrush AccentAmber = FormatHelpers.GetFrozenBrush("#FCD34D");
+    private static readonly SolidColorBrush IRacingGold = FormatHelpers.GetFrozenBrush("#F2B830");
     private static readonly SolidColorBrush OkGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
     private static readonly SolidColorBrush DangerRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
 
@@ -65,7 +67,8 @@ public sealed class FuelWindow : OverlayWindowBase
         var labels = new System.Collections.Generic.List<TextBlock>();
         var values = new System.Collections.Generic.List<TextBlock>();
 
-        var root = new StackPanel { Effect = HudTextShadow };
+        _rootStack = new StackPanel { Effect = GetActiveShadow() };
+        var root = _rootStack;
 
         // Header
         _headerGrid = new Grid { Height = 24 };
@@ -215,9 +218,18 @@ public sealed class FuelWindow : OverlayWindowBase
     protected override void OnAppearanceUpdated()
     {
         if (_outerBorder == null) return;
+        bool native = IsIRacingNative;
+
         _outerBorder.Background = MakeBackdropBrush(1.0);
         _outerBorder.BorderBrush = MakeBorderBrush();
-        _headerGrid.Background = MakeBackdropBrush(1.18, 0x0F, 0x13, 0x1C);
+        _outerBorder.CornerRadius = GetCardRadius();
+        _rootStack.Effect = GetActiveShadow();
+
+        // Unified matte charcoal card + iRacing Gold FUEL title in Native skin
+        _headerGrid.Background = native ? Brushes.Transparent : MakeBackdropBrush(1.18, 0x0F, 0x13, 0x1C);
+        _titleText.Text = native ? "FUEL" : "Fuel";
+        _titleText.Foreground = native ? IRacingGold : TextWhite;
+        _modeBadgeText.Foreground = native ? IRacingGold : AccentSky;
 
         var uiFont = GetUiFont();
         var monoFont = GetMonoFont();

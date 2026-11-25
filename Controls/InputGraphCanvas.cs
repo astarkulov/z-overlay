@@ -76,9 +76,15 @@ public sealed class InputGraphCanvas : FrameworkElement
         }
     }
 
-    public void SetBackdropOpacity(double opacity)
+    public void SetBackdropOpacity(double opacity, bool nativeSkin = false)
     {
-        _bgBrush = MakeBg(opacity * 0.70);
+        byte r = (byte)(nativeSkin ? 0x12 : 0x08);
+        byte g = (byte)(nativeSkin ? 0x14 : 0x0B);
+        byte b = (byte)(nativeSkin ? 0x1A : 0x10);
+        byte a = (byte)Math.Round(Math.Clamp(opacity * 0.72, 0.0, 0.92) * 255.0);
+        var br = new SolidColorBrush(Color.FromArgb(a, r, g, b));
+        br.Freeze();
+        _bgBrush = br;
         InvalidateVisual();
     }
 

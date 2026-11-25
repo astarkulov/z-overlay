@@ -66,21 +66,28 @@ public abstract class OverlayWindowBase : Window
     /// <summary>
     /// Crisp GPU-composited dark outline/shadow so HUD text stays razor-sharp even at 0-30% backdrop over bright sky.
     /// </summary>
-    protected static readonly DropShadowEffect HudTextShadow = CreateTextShadow();
+    protected static readonly DropShadowEffect HudTextShadow = CreateTextShadow(0.92, 2.5);
+    protected static readonly DropShadowEffect NativeTextShadow = CreateTextShadow(0.45, 1.5);
 
-    private static DropShadowEffect CreateTextShadow()
+    private static DropShadowEffect CreateTextShadow(double opacity, double blur)
     {
         var eff = new DropShadowEffect
         {
             Color = Colors.Black,
             Direction = 315,
             ShadowDepth = 1.0,
-            BlurRadius = 2.5,
-            Opacity = 0.92
+            BlurRadius = blur,
+            Opacity = opacity
         };
         eff.Freeze();
         return eff;
     }
+
+    protected bool IsIRacingNative =>
+        string.Equals(Settings.UiSkin, "IRacingNative", StringComparison.OrdinalIgnoreCase);
+
+    protected DropShadowEffect GetActiveShadow() => IsIRacingNative ? NativeTextShadow : HudTextShadow;
+    protected CornerRadius GetCardRadius() => new(IsIRacingNative ? 6 : 4);
 
     public event Action? LayoutChangedByUser;
     public event Action<string>? WidgetSelected;
@@ -600,17 +607,22 @@ public abstract class OverlayWindowBase : Window
         return new FontFamily($"{f}, Consolas");
     }
 
-    protected SolidColorBrush MakeBackdropBrush(double multiplier = 1.0, byte r = 0x0B, byte g = 0x0E, byte b = 0x14)
+    protected SolidColorBrush MakeBackdropBrush(double multiplier = 1.0, byte? r = null, byte? g = null, byte? b = null)
     {
+        byte cr = r ?? (byte)(IsIRacingNative ? 0x1A : 0x0B);
+        byte cg = g ?? (byte)(IsIRacingNative ? 0x1D : 0x0E);
+        byte cb = b ?? (byte)(IsIRacingNative ? 0x24 : 0x14);
         double alpha = Math.Clamp(Settings.BackgroundOpacity * multiplier, 0.0, 0.96);
-        var brush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(alpha * 255.0), r, g, b));
+        var brush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(alpha * 255.0), cr, cg, cb));
         brush.Freeze();
         return brush;
     }
 
     protected SolidColorBrush MakeBorderBrush()
     {
-        double alpha = Math.Clamp(Settings.BackgroundOpacity * 0.34, 0.06, 0.28);
+        double alpha = IsIRacingNative
+            ? Math.Clamp(Settings.BackgroundOpacity * 0.20, 0.05, 0.18)
+            : Math.Clamp(Settings.BackgroundOpacity * 0.34, 0.06, 0.28);
         var brush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(alpha * 255.0), 0xFF, 0xFF, 0xFF));
         brush.Freeze();
         return brush;

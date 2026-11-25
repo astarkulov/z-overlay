@@ -57,9 +57,15 @@ public sealed class RadarCanvas : FrameworkElement
         _bgCircleBrush = MakeBg(0.55);
     }
 
-    public void SetBackdropOpacity(double opacity)
+    public void SetBackdropOpacity(double opacity, bool nativeSkin = false)
     {
-        _bgCircleBrush = MakeBg(Math.Clamp(opacity * 0.85, 0.12, 0.88));
+        byte r = (byte)(nativeSkin ? 0x1A : 0x0B);
+        byte g = (byte)(nativeSkin ? 0x1D : 0x0E);
+        byte b = (byte)(nativeSkin ? 0x24 : 0x14);
+        byte a = (byte)Math.Round(Math.Clamp(opacity * 0.85, 0.12, 0.90) * 255.0);
+        var br = new SolidColorBrush(Color.FromArgb(a, r, g, b));
+        br.Freeze();
+        _bgCircleBrush = br;
         InvalidateVisual();
     }
 

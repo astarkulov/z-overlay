@@ -17,6 +17,7 @@ namespace ApexHUD.Windows;
 public sealed class InputsWindow : OverlayWindowBase
 {
     private readonly Border _outerBorder;
+    private readonly StackPanel _rootStack;
     private readonly Border _shiftRowHost;
     private readonly ShiftLightBar _shiftBar;
 
@@ -75,6 +76,7 @@ public sealed class InputsWindow : OverlayWindowBase
     private static readonly SolidColorBrush AbsBrush = FormatHelpers.GetFrozenBrush("#FCD34D");
     private static readonly SolidColorBrush DeltaGreen = FormatHelpers.GetFrozenBrush("#4ADE80");
     private static readonly SolidColorBrush DeltaRed = FormatHelpers.GetFrozenBrush("#FF5A6E");
+    private static readonly SolidColorBrush IRacingGold = FormatHelpers.GetFrozenBrush("#F2B830");
     private static readonly SolidColorBrush CornerLiveBg = FormatHelpers.GetFrozenBrush("#2838BDF8");
     private static readonly SolidColorBrush CornerIdleBg = FormatHelpers.GetFrozenBrush("#12FFFFFF");
 
@@ -96,7 +98,7 @@ public sealed class InputsWindow : OverlayWindowBase
             SnapsToDevicePixels = true
         };
 
-        var rootStack = new StackPanel { Effect = HudTextShadow };
+        _rootStack = new StackPanel { Effect = GetActiveShadow() };
 
         // 1) Top Shift Light Bar
         _shiftBar = new ShiftLightBar
@@ -110,7 +112,7 @@ public sealed class InputsWindow : OverlayWindowBase
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = _shiftBar
         };
-        rootStack.Children.Add(_shiftRowHost);
+        _rootStack.Children.Add(_shiftRowHost);
 
         // 2) Main Modular Horizontal Row
         _mainRow = new StackPanel
@@ -261,7 +263,7 @@ public sealed class InputsWindow : OverlayWindowBase
         _wheelZone.Children.Add(_steerDegText);
         _mainRow.Children.Add(_wheelZone);
 
-        rootStack.Children.Add(_mainRow);
+        _rootStack.Children.Add(_mainRow);
 
         // 3) Bottom Strip A: Electronics (BB/TC/ABS) + Live Delta Bar
         var elecDeltaGrid = new Grid { Height = 26, Margin = new Thickness(8, 0, 8, 0) };
@@ -318,7 +320,7 @@ public sealed class InputsWindow : OverlayWindowBase
             BorderThickness = new Thickness(0, 1, 0, 0),
             Child = elecDeltaGrid
         };
-        rootStack.Children.Add(_elecDeltaHost);
+        _rootStack.Children.Add(_elecDeltaHost);
 
         // 4) Bottom Strip B: Racelab 4-Corner Min Speed Strip (Your Min vs Session Fastest)
         var cornersGrid = new Grid { Margin = new Thickness(6, 5, 6, 5) };
@@ -337,9 +339,9 @@ public sealed class InputsWindow : OverlayWindowBase
             BorderThickness = new Thickness(0, 1, 0, 0),
             Child = cornersGrid
         };
-        rootStack.Children.Add(_cornersHost);
+        _rootStack.Children.Add(_cornersHost);
 
-        _outerBorder.Child = rootStack;
+        _outerBorder.Child = _rootStack;
         AttachOverlayRoot(_outerBorder, "Inputs");
     }
 
@@ -438,12 +440,19 @@ public sealed class InputsWindow : OverlayWindowBase
     protected override void OnAppearanceUpdated()
     {
         if (_outerBorder == null) return;
+        bool native = IsIRacingNative;
+
         _outerBorder.Background = MakeBackdropBrush(1.0);
         _outerBorder.BorderBrush = MakeBorderBrush();
-        _graph.SetBackdropOpacity(Settings.BackgroundOpacity);
+        _outerBorder.CornerRadius = GetCardRadius();
+        _rootStack.Effect = GetActiveShadow();
+
+        _graph.SetBackdropOpacity(Settings.BackgroundOpacity, native);
         _graph.ShowClutch = Settings.ShowInputsClutch;
         _graph.WindowSeconds = Settings.InputsGraphSeconds;
         _graphZone.Width = Math.Clamp(Settings.InputsGraphWidth, 140.0, 460.0);
+
+        _gearText.Foreground = native ? IRacingGold : TextWhite;
 
         var uiFont = GetUiFont();
         var monoFont = GetMonoFont();
