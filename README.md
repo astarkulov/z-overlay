@@ -112,3 +112,10 @@ dotnet publish ApexHUD.csproj -c Release -r win-x64 --self-contained false -p:Pu
 ```
 
 Установщик появится в `dist\Z-Overlay-Setup-v1.1.11.exe`.
+
+---
+
+## Документация для разработки
+
+- [Архитектура, карта проекта и дизайн-система](docs/ARCHITECTURE.md)
+- [Сборка, генерация GIF, релизы и бэклог](docs/DEV_AND_RELEASE.md)
