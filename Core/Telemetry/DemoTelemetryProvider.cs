@@ -210,6 +210,7 @@ public sealed class DemoTelemetryProvider
             IsConnected = true,
             IsDemo = true,
             IsOnTrack = true,
+            IsDriving = true,
             TimestampUtc = DateTime.UtcNow,
             Session = new SessionHeaderTelemetry
             {

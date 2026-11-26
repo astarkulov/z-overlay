@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -10,6 +11,7 @@ using System.Windows.Media;
 using ApexHUD.Core.Native;
 using ApexHUD.Core.Settings;
 using ApexHUD.Core.Telemetry;
+using ApexHUD.Core.Updates;
 using Forms = System.Windows.Forms;
 
 namespace ApexHUD.Windows;
@@ -32,8 +34,10 @@ public partial class HubWindow : Window
     private bool _syncingUi = true;
     private string _selectedWidgetKey = "Relative";
     private double _nudgeStepPx = 5.0;
+    private UpdateCheckResult? _availableUpdate;
+    private bool _updateBusy;
     private readonly Dictionary<string, Button> _selectButtons = new();
-    private readonly Dictionary<string, (CheckBox Enable, Slider Scale, TextBlock ScaleVal, Slider Opacity, TextBlock OpacityVal)> _widgetRows = new();
+    private readonly Dictionary<string, (CheckBox Enable, CheckBox HideNotDriving, Slider Scale, TextBlock ScaleVal, Slider Opacity, TextBlock OpacityVal)> _widgetRows = new();
 
     private static readonly (string Key, string Label, string Desc)[] WidgetDefs =
     {
@@ -64,6 +68,9 @@ public partial class HubWindow : Window
         _onExitApp = onExitApp;
 
         InitializeComponent();
+
+        FooterVersionText.Text = $"ApexHUD {UpdateService.CurrentVersionString}";
+        UpdateStatusText.Text = $"Текущая версия: v{UpdateService.CurrentVersionString}";
 
         BuildWidgetControls();
         BuildWidgetSelectorButtons();
@@ -375,6 +382,7 @@ public partial class HubWindow : Window
         var monoFont = (FontFamily)FindResource("HudMonoFont");
         var uiFont = (FontFamily)FindResource("HudUiFont");
         var toggleStyle = (Style)FindResource("CleanToggle");
+        var compactToggleStyle = (Style)FindResource("CompactToggle");
         var sliderStyle = (Style)FindResource("CleanSlider");
 
         foreach (var (key, label, desc) in WidgetDefs)
@@ -385,11 +393,12 @@ public partial class HubWindow : Window
                 BorderBrush = FormatHelpers.GetFrozenBrush("#FF242D3D"),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(12, 10, 12, 10),
-                Margin = new Thickness(0, 0, 0, 8)
+                Padding = new Thickness(12, 6, 12, 6),
+                Margin = new Thickness(0, 0, 0, 5)
             };
 
             var g = new Grid();
+            g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -409,12 +418,6 @@ public partial class HubWindow : Window
                 }
             };
             string k = key;
-            enableChk.Click += (_, _) =>
-            {
-                if (_syncingUi) return;
-                _settings.GetWidget(k).Enabled = enableChk.IsChecked == true;
-                _onSettingsChanged();
-            };
             Grid.SetRow(enableChk, 0);
             Grid.SetColumn(enableChk, 0);
             g.Children.Add(enableChk);
@@ -425,12 +428,40 @@ public partial class HubWindow : Window
                 FontFamily = uiFont,
                 FontSize = 11,
                 Foreground = FormatHelpers.GetFrozenBrush("#FF94A3B8"),
-                Margin = new Thickness(0, 4, 10, 0),
+                Margin = new Thickness(0, 3, 10, 0),
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
             Grid.SetRow(descTb, 1);
             Grid.SetColumn(descTb, 0);
             g.Children.Add(descTb);
+
+            var hideNotDrivingChk = new CheckBox
+            {
+                Style = compactToggleStyle,
+                Content = "Скрывать, когда не за рулём",
+                ToolTip = "Скрывает виджет в режиме гонки (Lock), пока ты не в машине (меню, реплей, гараж, спектатор). В режиме редактирования и Демо виджет остаётся видимым.",
+                Margin = new Thickness(0, 4, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            hideNotDrivingChk.Click += (_, _) =>
+            {
+                if (_syncingUi) return;
+                _settings.GetWidget(k).HideWhenNotDriving = hideNotDrivingChk.IsChecked == true;
+                _onSettingsChanged();
+            };
+            Grid.SetRow(hideNotDrivingChk, 2);
+            Grid.SetColumn(hideNotDrivingChk, 0);
+            Grid.SetColumnSpan(hideNotDrivingChk, 3);
+            g.Children.Add(hideNotDrivingChk);
+
+            enableChk.Click += (_, _) =>
+            {
+                if (_syncingUi) return;
+                bool enabled = enableChk.IsChecked == true;
+                _settings.GetWidget(k).Enabled = enabled;
+                hideNotDrivingChk.Opacity = enabled ? 1.0 : 0.45;
+                _onSettingsChanged();
+            };
 
             // Individual Scale slider (70% .. 200%)
             var scalePanel = new StackPanel { Margin = new Thickness(8, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -474,7 +505,7 @@ public partial class HubWindow : Window
 
             card.Child = g;
             WidgetsPanel.Children.Add(card);
-            _widgetRows[key] = (enableChk, scaleSlider, scaleVal, opSlider, opVal);
+            _widgetRows[key] = (enableChk, hideNotDrivingChk, scaleSlider, scaleVal, opSlider, opVal);
         }
     }
 
@@ -544,6 +575,7 @@ public partial class HubWindow : Window
             RadarAutoHideCheck.IsChecked = _settings.RadarAutoHideWhenClear;
             OnlyIRacingFocusCheck.IsChecked = _settings.ShowOnlyWhenIRacingFocused;
             AutoHideOutOfSimCheck.IsChecked = _settings.AutoHideOutOfSim;
+            AutoCheckUpdatesCheck.IsChecked = _settings.AutoCheckUpdates;
             ImperialUnitsCheck.IsChecked = _settings.UseImperialUnits;
             FuelMarginText.Text = $"+{_settings.FuelSafetyMarginLaps:0.0} L";
             UpdateFuelModeButtons();
@@ -557,6 +589,8 @@ public partial class HubWindow : Window
             {
                 var layout = _settings.GetWidget(kv.Key);
                 kv.Value.Enable.IsChecked = layout.Enabled;
+                kv.Value.HideNotDriving.IsChecked = layout.HideWhenNotDriving;
+                kv.Value.HideNotDriving.Opacity = layout.Enabled ? 1.0 : 0.45;
                 kv.Value.Scale.Value = Math.Clamp(layout.Scale, 0.55, 2.50);
                 kv.Value.ScaleVal.Text = $"{(int)Math.Round(layout.Scale * 100)}%";
                 kv.Value.Opacity.Value = Math.Clamp(layout.Opacity, 0.35, 1.0);
@@ -583,11 +617,22 @@ public partial class HubWindow : Window
         }
         else if (snap.IsConnected)
         {
-            StatusBadge.Background = FormatHelpers.GetFrozenBrush("#1A22C55E");
-            StatusBadge.BorderBrush = FormatHelpers.GetFrozenBrush("#4422C55E");
-            StatusDot.Fill = FormatHelpers.GetFrozenBrush("#FF22C55E");
-            StatusText.Foreground = FormatHelpers.GetFrozenBrush("#FFDCFCE7");
-            StatusText.Text = "iRacing Live";
+            if (snap.IsDriving)
+            {
+                StatusBadge.Background = FormatHelpers.GetFrozenBrush("#1A22C55E");
+                StatusBadge.BorderBrush = FormatHelpers.GetFrozenBrush("#4422C55E");
+                StatusDot.Fill = FormatHelpers.GetFrozenBrush("#FF22C55E");
+                StatusText.Foreground = FormatHelpers.GetFrozenBrush("#FFDCFCE7");
+                StatusText.Text = "iRacing • За рулём";
+            }
+            else
+            {
+                StatusBadge.Background = FormatHelpers.GetFrozenBrush("#1A38BDF8");
+                StatusBadge.BorderBrush = FormatHelpers.GetFrozenBrush("#4438BDF8");
+                StatusDot.Fill = FormatHelpers.GetFrozenBrush("#FF38BDF8");
+                StatusText.Foreground = FormatHelpers.GetFrozenBrush("#FFE0F2FE");
+                StatusText.Text = "iRacing • В меню";
+            }
         }
         else
         {
@@ -753,6 +798,7 @@ public partial class HubWindow : Window
         _settings.RadarAutoHideWhenClear = RadarAutoHideCheck.IsChecked == true;
         _settings.ShowOnlyWhenIRacingFocused = OnlyIRacingFocusCheck.IsChecked == true;
         _settings.AutoHideOutOfSim = AutoHideOutOfSimCheck.IsChecked == true;
+        _settings.AutoCheckUpdates = AutoCheckUpdatesCheck.IsChecked == true;
         _settings.UseImperialUnits = ImperialUnitsCheck.IsChecked == true;
         _onSettingsChanged();
     }
@@ -784,6 +830,120 @@ public partial class HubWindow : Window
         FuelMarginText.Text = $"+{_settings.FuelSafetyMarginLaps:0.0} L";
         _onSettingsChanged();
     }
+
+    public void ApplyUpdateCheckResult(UpdateCheckResult result, bool silent)
+    {
+        if (result.UpdateAvailable)
+        {
+            _availableUpdate = result;
+            UpdateBanner.Visibility = Visibility.Visible;
+            UpdateBannerTitle.Text = $"Доступна {result.LatestTag}";
+            UpdateBannerSub.Text = UpdateService.IsInstalledBuild()
+                ? "Установится поверх текущей версии"
+                : "Скачает и перезапустит ApexHUD";
+            UpdateInstallBtn.Content = "Обновить сейчас";
+            UpdateInstallBtn.IsEnabled = true;
+            UpdateProgressBar.Visibility = Visibility.Collapsed;
+
+            UpdateStatusText.Text = $"Доступна новая версия {result.LatestTag} (текущая v{UpdateService.CurrentVersionString})";
+            UpdateDetailText.Text = "Нажми «Обновить сейчас» в боковой панели для установки в 1 клик";
+        }
+        else if (result.Success)
+        {
+            _availableUpdate = null;
+            UpdateBanner.Visibility = Visibility.Collapsed;
+            UpdateStatusText.Text = $"Установлена актуальная версия v{UpdateService.CurrentVersionString}";
+            UpdateDetailText.Text = $"Последний релиз на GitHub: {result.LatestTag}";
+        }
+        else if (!silent)
+        {
+            UpdateStatusText.Text = $"Не удалось проверить обновления ({result.ErrorMessage})";
+            UpdateDetailText.Text = "Проверь подключение к интернету или открой GitHub вручную";
+        }
+    }
+
+    public void TriggerManualUpdateCheck()
+    {
+        TabHudPrefs.IsChecked = true;
+        PageHudPrefs.ScrollToBottom();
+        _ = RunManualUpdateCheckAsync();
+    }
+
+    private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        await RunManualUpdateCheckAsync();
+    }
+
+    private async Task RunManualUpdateCheckAsync()
+    {
+        if (_updateBusy) return;
+        _updateBusy = true;
+        CheckUpdatesBtn.IsEnabled = false;
+        CheckUpdatesBtn.Content = "Проверка...";
+        UpdateStatusText.Text = "Проверяю GitHub Releases...";
+        UpdateDetailText.Text = $"Репозиторий: {UpdateService.RepoOwner}/{UpdateService.RepoName}";
+
+        try
+        {
+            var result = await UpdateService.CheckForUpdateAsync();
+            ApplyUpdateCheckResult(result, silent: false);
+        }
+        finally
+        {
+            CheckUpdatesBtn.Content = "Проверить";
+            CheckUpdatesBtn.IsEnabled = true;
+            _updateBusy = false;
+        }
+    }
+
+    private async void InstallUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        if (_updateBusy || _availableUpdate == null) return;
+        _updateBusy = true;
+        UpdateInstallBtn.IsEnabled = false;
+        CheckUpdatesBtn.IsEnabled = false;
+        UpdateInstallBtn.Content = "Скачивание...";
+        UpdateBannerSub.Text = "Подключение к GitHub...";
+        UpdateProgressBar.Value = 0;
+        UpdateProgressBar.Visibility = Visibility.Visible;
+
+        var progress = new Progress<(double Progress, long DownloadedBytes, long TotalBytes)>(p =>
+        {
+            int pct = (int)Math.Round(p.Progress * 100.0);
+            UpdateProgressBar.Value = pct;
+            if (p.TotalBytes > 0)
+            {
+                double doneMb = p.DownloadedBytes / (1024.0 * 1024.0);
+                double totMb = p.TotalBytes / (1024.0 * 1024.0);
+                UpdateBannerSub.Text = $"Скачивание {pct}% ({doneMb:0.0} / {totMb:0.0} МБ)";
+            }
+            else
+            {
+                double doneKb = p.DownloadedBytes / 1024.0;
+                UpdateBannerSub.Text = $"Скачивание {doneKb:0} КБ...";
+            }
+        });
+
+        var (readyToExit, error) = await UpdateService.DownloadAndLaunchUpdateAsync(_availableUpdate, progress);
+        if (readyToExit)
+        {
+            UpdateInstallBtn.Content = "Перезапуск...";
+            UpdateBannerSub.Text = "Применение обновления...";
+            _onExitApp();
+            return;
+        }
+
+        UpdateProgressBar.Visibility = Visibility.Collapsed;
+        UpdateBannerSub.Text = error ?? "Ошибка загрузки обновления";
+        UpdateDetailText.Text = error ?? "Ошибка загрузки обновления";
+        UpdateInstallBtn.Content = "Повторить";
+        UpdateInstallBtn.IsEnabled = true;
+        CheckUpdatesBtn.IsEnabled = true;
+        _updateBusy = false;
+    }
+
+    private void OpenReleases_Click(object sender, RoutedEventArgs e)
+        => UpdateService.OpenReleasesPage(_availableUpdate?.ReleaseUrl);
 
     private void MinimizeToTray_Click(object sender, RoutedEventArgs e) => _onMinimizeToTray();
     private void ExitApp_Click(object sender, RoutedEventArgs e) => _onExitApp();

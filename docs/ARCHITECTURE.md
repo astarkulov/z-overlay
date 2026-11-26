@@ -5,7 +5,7 @@
 - **Репозиторий:** https://github.com/astarkulov/z-overlay (ветка `main`)
 - **Локальный путь проекта:** `C:\Users\Aktan\Documents\ApexHUD`
 - **Стек:** C# / .NET 6 (`net6.0-windows`), WPF + минимальный WinForms (`NotifyIcon`, `Screen.AllScreens`), прямой бинарный ридер Shared Memory iRacing (`IRSDK`) — **0 внешних NuGet-зависимостей**.
-- **Текущая версия:** `v1.1.11`
+- **Текущая версия:** `v1.1.12`
 
 ---
 
@@ -21,6 +21,7 @@ ApexHUD/
 ├── Core/
 │   ├── Native/Win32.cs               # P/Invoke: WS_EX_TRANSPARENT|NOACTIVATE, RegisterHotKey, Foreground iRacing check, GetCursorPos
 │   ├── Settings/AppSettings.cs       # Модель настроек + загрузка/сохранение %AppData%\ApexHUD\settings.json
+│   ├── Updates/UpdateService.cs      # Автообновление в 1 клик через GitHub Releases API (установщик + portable)
 │   ├── Diagnostics/
 │   │   └── ScreenshotExporter.cs     # Флаг --capture-screenshots: рендер PNG и GIF89a (dirty-rect + NETSCAPE2.0)
 │   └── Telemetry/

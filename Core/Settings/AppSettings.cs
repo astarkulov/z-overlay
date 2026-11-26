@@ -8,6 +8,7 @@ namespace ApexHUD.Core.Settings;
 public sealed class WidgetLayout
 {
     public bool Enabled { get; set; } = true;
+    public bool HideWhenNotDriving { get; set; } = false;
     public double Left { get; set; }
     public double Top { get; set; }
     public double Scale { get; set; } = 1.0;
@@ -21,6 +22,7 @@ public sealed class AppSettings
     public bool Locked { get; set; } = false;
     public bool AutoHideOutOfSim { get; set; } = false;
     public bool ShowOnlyWhenIRacingFocused { get; set; } = true;
+    public bool AutoCheckUpdates { get; set; } = true;
 
     // Appearance & Typography
     public string UiSkin { get; set; } = "IRacingNative"; // IRacingNative | ApexCarbon
@@ -115,6 +117,7 @@ public sealed class AppSettings
             ["Inputs"] = new()
             {
                 Enabled = true,
+                HideWhenNotDriving = true,
                 Left = Math.Max(24, (screenW - 480 * gs) / 2.0),
                 Top = Math.Max(24, screenH - 180 * gs - 36),
                 Scale = 1.0,
@@ -166,6 +169,7 @@ public sealed class AppSettings
                     if (loaded.BackgroundOpacity <= 0.0 && !json.Contains("BackgroundOpacity"))
                         loaded.BackgroundOpacity = 0.62;
                     if (!json.Contains("ShowOnlyWhenIRacingFocused")) loaded.ShowOnlyWhenIRacingFocused = true;
+                    if (!json.Contains("AutoCheckUpdates")) loaded.AutoCheckUpdates = true;
                     if (!json.Contains("ShowCarBrandIcons")) loaded.ShowCarBrandIcons = true;
                     if (!json.Contains("ShowRelativeHeader")) loaded.ShowRelativeHeader = true;
                     if (!json.Contains("ShowRelativeCarNumber")) loaded.ShowRelativeCarNumber = true;
@@ -195,6 +199,8 @@ public sealed class AppSettings
                         if (!loaded.Widgets.ContainsKey(kv.Key))
                             loaded.Widgets[kv.Key] = kv.Value;
                     }
+                    if (!json.Contains("HideWhenNotDriving") && loaded.Widgets.TryGetValue("Inputs", out var inpLayout))
+                        inpLayout.HideWhenNotDriving = true;
                     return loaded;
                 }
             }

@@ -228,6 +228,9 @@ public sealed class IRacingSdkReader : IDisposable
 
         int playerIdx = ReadInt("PlayerCarIdx", _yamlMeta.DriverCarIdx);
         bool isOnTrack = ReadBool("IsOnTrack");
+        bool isInGarage = ReadBool("IsInGarage");
+        bool isReplayPlaying = ReadBool("IsReplayPlaying");
+        bool isDriving = isOnTrack && !isInGarage && !isReplayPlaying;
         bool onPitRoad = ReadBool("OnPitRoad");
         int currentLap = ReadInt("Lap");
         float lapDistPct = ReadFloat("LapDistPct");
@@ -353,6 +356,7 @@ public sealed class IRacingSdkReader : IDisposable
             IsConnected = true,
             IsDemo = false,
             IsOnTrack = isOnTrack,
+            IsDriving = isDriving,
             TimestampUtc = DateTime.UtcNow,
             Session = new SessionHeaderTelemetry
             {

@@ -204,6 +204,7 @@ public sealed class TelemetrySnapshot
     public bool IsConnected { get; set; }
     public bool IsDemo { get; set; }
     public bool IsOnTrack { get; set; }
+    public bool IsDriving { get; set; }
     public DateTime TimestampUtc { get; set; } = DateTime.UtcNow;
 
     public SessionHeaderTelemetry Session { get; set; } = new();

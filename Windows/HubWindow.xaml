@@ -42,13 +42,40 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- Navigation Tabs -->
-                    <StackPanel Grid.Row="1" Margin="0,4,0,0">
-                        <RadioButton x:Name="TabWidgets" Style="{StaticResource SidebarNavButton}" Content="Виджеты" IsChecked="True" Checked="NavTab_Checked" />
-                        <RadioButton x:Name="TabPosition" Style="{StaticResource SidebarNavButton}" Content="Позиция и привязка" Checked="NavTab_Checked" />
-                        <RadioButton x:Name="TabAppearance" Style="{StaticResource SidebarNavButton}" Content="Внешний вид и масштаб" Checked="NavTab_Checked" />
-                        <RadioButton x:Name="TabHudPrefs" Style="{StaticResource SidebarNavButton}" Content="Настройки HUD" Checked="NavTab_Checked" />
-                    </StackPanel>
+                    <!-- Navigation Tabs + Auto-Update Banner -->
+                    <Grid Grid.Row="1" Margin="0,4,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0">
+                            <RadioButton x:Name="TabWidgets" Style="{StaticResource SidebarNavButton}" Content="Виджеты" IsChecked="True" Checked="NavTab_Checked" />
+                            <RadioButton x:Name="TabPosition" Style="{StaticResource SidebarNavButton}" Content="Позиция и привязка" Checked="NavTab_Checked" />
+                            <RadioButton x:Name="TabAppearance" Style="{StaticResource SidebarNavButton}" Content="Внешний вид и масштаб" Checked="NavTab_Checked" />
+                            <RadioButton x:Name="TabHudPrefs" Style="{StaticResource SidebarNavButton}" Content="Настройки HUD" Checked="NavTab_Checked" />
+                        </StackPanel>
+
+                        <Border x:Name="UpdateBanner" Grid.Row="1" Visibility="Collapsed"
+                                Background="#1A22C55E" BorderBrush="#5522C55E" BorderThickness="1"
+                                CornerRadius="4" Padding="10,8" Margin="10,0,10,10">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="7" Height="7" Fill="#FF22C55E" Margin="0,0,6,0" />
+                                    <TextBlock x:Name="UpdateBannerTitle" Text="Доступна v1.1.12"
+                                               FontFamily="{StaticResource HudUiFont}" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="#FFDCFCE7" />
+                                </StackPanel>
+                                <TextBlock x:Name="UpdateBannerSub" Text="Нажми для автообновления"
+                                           FontSize="10.5" Foreground="#FF86EFAC" Margin="0,2,0,7" TextWrapping="Wrap" />
+                                <ProgressBar x:Name="UpdateProgressBar" Height="4" Minimum="0" Maximum="100" Value="0"
+                                             Foreground="#FF22C55E" Background="#330F172A" BorderThickness="0"
+                                             Visibility="Collapsed" Margin="0,0,0,7" />
+                                <Button x:Name="UpdateInstallBtn" Style="{StaticResource ModernPrimaryButton}"
+                                        Content="Обновить сейчас" Padding="8,5" FontSize="11.5" Click="InstallUpdate_Click" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
                     <!-- Bottom Actions -->
                     <Border Grid.Row="2" BorderBrush="#FF1C2331" BorderThickness="0,1,0,0" Padding="14,12">
@@ -87,10 +114,10 @@
                 </Grid>
 
                 <!-- PAGE 1: WIDGETS -->
-                <ScrollViewer x:Name="PageWidgets" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,4,22,16">
+                <ScrollViewer x:Name="PageWidgets" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,4,22,10">
                     <StackPanel>
                         <!-- Quick Global Bar -->
-                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,12" Margin="0,0,0,14">
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,9" Margin="0,0,0,10">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -476,15 +503,44 @@
                                 </Grid>
                             </StackPanel>
                         </Border>
+
+                        <!-- Auto-Updates (GitHub Releases) -->
+                        <TextBlock Text="ОБНОВЛЕНИЯ (GITHUB RELEASES)" Style="{StaticResource SectionTitle}" Margin="0,14,0,8" />
+                        <Border Background="#FF141923" BorderBrush="#FF242D3D" BorderThickness="1" CornerRadius="4" Padding="14,10">
+                            <StackPanel>
+                                <CheckBox x:Name="AutoCheckUpdatesCheck" Style="{StaticResource CleanToggle}"
+                                          Content="Проверять обновления автоматически при запуске" Margin="0,4" Click="PrefsChanged_Click" />
+
+                                <Grid Margin="0,8,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <TextBlock x:Name="UpdateStatusText" Text="Текущая версия: v1.1.12"
+                                                   FontSize="12" FontWeight="SemiBold" Foreground="#FFE2E8F0" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="UpdateDetailText" Text="Обновления загружаются напрямую с GitHub Releases"
+                                                   FontSize="11" Foreground="#FF94A3B8" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button x:Name="CheckUpdatesBtn" Style="{StaticResource ModernButton}"
+                                                Content="Проверить" Padding="10,5" Margin="0,0,6,0" Click="CheckUpdates_Click" />
+                                        <Button x:Name="OpenReleasesBtn" Style="{StaticResource ModernButton}"
+                                                Content="GitHub" Padding="10,5" Click="OpenReleases_Click"
+                                                ToolTip="Открыть страницу релизов на GitHub" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- Footer -->
                 <Border Grid.Row="2" Background="#FF0B0E14" BorderBrush="#FF1C2331" BorderThickness="0,1,0,0" Padding="22,0">
                     <Grid>
-                        <TextBlock Text="В iRacing включи Borderless Windowed • Глобальный хоткей Lock/Unlock: Ctrl + Shift + L"
+                        <TextBlock Text="iRacing: Borderless Windowed • Lock/Unlock: Ctrl + Shift + L"
                                    FontSize="11" Foreground="#FF64748B" VerticalAlignment="Center" />
-                        <TextBlock Text="ApexHUD 1.1.11" FontFamily="{StaticResource HudMonoFont}" FontSize="10.5" Foreground="#FF475569" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        <TextBlock x:Name="FooterVersionText" Text="ApexHUD 1.1.12" FontFamily="{StaticResource HudMonoFont}" FontSize="10.5" Foreground="#FF475569" HorizontalAlignment="Right" VerticalAlignment="Center" />
                     </Grid>
                 </Border>
             </Grid>

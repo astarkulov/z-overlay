@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using ApexHUD.Core.Native;
 using ApexHUD.Core.Settings;
 using ApexHUD.Core.Telemetry;
+using ApexHUD.Core.Updates;
 using ApexHUD.Windows;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
@@ -26,6 +28,7 @@ public partial class App : Application
     private List<OverlayWindowBase> _overlays = new();
 
     private Forms.NotifyIcon? _trayIcon;
+    private Forms.ToolStripMenuItem? _trayUpdateItem;
     private DispatcherTimer? _topmostTimer;
     private DispatcherTimer? _focusPollTimer;
     private Mutex? _instanceMutex;
@@ -41,6 +44,7 @@ public partial class App : Application
     private int _uiDispatchScheduled;
     private int _frameCounter;
     private bool _lastConnected;
+    private bool _lastIsDriving;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -150,6 +154,34 @@ public partial class App : Application
         _telemetry = new TelemetryService(_settings);
         _telemetry.SnapshotReady += OnTelemetrySnapshot;
         _telemetry.Start();
+
+        if (_settings.AutoCheckUpdates)
+        {
+            _ = RunStartupUpdateCheckAsync();
+        }
+    }
+
+    private async Task RunStartupUpdateCheckAsync()
+    {
+        try
+        {
+            // Small delay so startup and first overlay frames are instant
+            await Task.Delay(1800);
+            if (_shuttingDown) return;
+
+            var result = await UpdateService.CheckForUpdateAsync();
+            if (_shuttingDown || !result.Success) return;
+
+            await Dispatcher.InvokeAsync(() =>
+            {
+                _hub?.ApplyUpdateCheckResult(result, silent: true);
+                if (result.UpdateAvailable && _trayUpdateItem != null)
+                {
+                    _trayUpdateItem.Text = $"Доступно обновление {result.LatestTag}...";
+                }
+            });
+        }
+        catch { }
     }
 
     private void OnTelemetrySnapshot(TelemetrySnapshot snapshot)
@@ -181,13 +213,34 @@ public partial class App : Application
         return false;
     }
 
+    private bool ShouldShowWidget(string widgetKey, bool hideAll)
+    {
+        if (hideAll) return false;
+
+        var layout = _settings.GetWidget(widgetKey);
+        if (!layout.Enabled) return false;
+
+        // Hide widget when player is not behind the wheel (menu, garage, replay, spectating, disconnected).
+        // Keep visible in Demo Mode and Edit (Unlocked) Mode so the user can always position/resize widgets.
+        if (layout.HideWhenNotDriving && !_settings.DemoMode && _settings.Locked && !_lastIsDriving)
+            return false;
+
+        return true;
+    }
+
     private void ProcessLatestSnapshot()
     {
         Interlocked.Exchange(ref _uiDispatchScheduled, 0);
         var snap = Interlocked.Exchange(ref _pendingSnapshot, null);
         if (snap == null) return;
 
+        bool wasDriving = _lastIsDriving;
         _lastConnected = snap.IsConnected;
+        _lastIsDriving = snap.IsDriving;
+
+        if (!wasDriving && snap.IsDriving && !snap.IsDemo)
+            _inputsWin.ResetLiveTrace();
+
         bool hideAll = ShouldHideOverlays(snap.IsConnected);
 
         UpdateOverlayVisibility(hideAll);
@@ -214,17 +267,24 @@ public partial class App : Application
         }
     }
 
-    private void UpdateOverlayVisibility(bool hideAll)
+    private void UpdateOverlayVisibility(bool hideAll, bool applyLayout = false)
     {
         foreach (var ov in _overlays)
         {
-            bool shouldShow = !hideAll && _settings.GetWidget(ov.WidgetKey).Enabled;
-            if (shouldShow && !ov.IsVisible)
+            bool shouldShow = ShouldShowWidget(ov.WidgetKey, hideAll);
+            if (shouldShow)
             {
-                ov.Show();
-                ov.ApplyLayoutFromSettings();
+                if (!ov.IsVisible)
+                {
+                    ov.Show();
+                    ov.ApplyLayoutFromSettings();
+                }
+                else if (applyLayout)
+                {
+                    ov.ApplyLayoutFromSettings();
+                }
             }
-            else if (!shouldShow && ov.IsVisible)
+            else if (ov.IsVisible)
             {
                 ov.Hide();
             }
@@ -234,19 +294,7 @@ public partial class App : Application
     private void ApplyAllSettingsAndSave()
     {
         bool hideAll = ShouldHideOverlays(_lastConnected);
-        foreach (var ov in _overlays)
-        {
-            var layout = _settings.GetWidget(ov.WidgetKey);
-            if (!hideAll && layout.Enabled)
-            {
-                if (!ov.IsVisible) ov.Show();
-                ov.ApplyLayoutFromSettings();
-            }
-            else if (ov.IsVisible)
-            {
-                ov.Hide();
-            }
-        }
+        UpdateOverlayVisibility(hideAll, applyLayout: true);
         _settings.Save();
     }
 
@@ -293,6 +341,12 @@ public partial class App : Application
             _hub.SyncUiFromSettings();
             ApplyAllSettingsAndSave();
         }));
+        _trayUpdateItem = new Forms.ToolStripMenuItem("Проверить обновления...", null, (_, _) => Dispatcher.Invoke(() =>
+        {
+            ShowHubFromTray();
+            _hub.TriggerManualUpdateCheck();
+        }));
+        menu.Items.Add(_trayUpdateItem);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Выход", null, (_, _) => Dispatcher.Invoke(CleanShutdown));
 

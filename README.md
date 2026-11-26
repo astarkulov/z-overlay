@@ -12,7 +12,7 @@
 Поддерживает **2 темы оформления** в 1 клик: **iRacing Native** (бесшовная стилистика нового интерфейса iRacing 2026: матовый графит, золотой акцент, тонкие разделители и вертикальная классовая линия с нодами) и **Apex Carbon**.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/hero-overview.gif?v=1.1.11" alt="Z-Overlay — живое превью всех виджетов с анимациями" width="100%" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/hero-overview.gif?v=1.1.12" alt="Z-Overlay — живое превью всех виджетов с анимациями" width="100%" />
 </p>
 
 ---
@@ -22,7 +22,7 @@
 ### Standings (Multiclass + GPU-анимации)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/standings.gif?v=1.1.11" alt="Z-Overlay Standings Widget — живые обгоны и анимации" width="760" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/standings.gif?v=1.1.12" alt="Z-Overlay Standings Widget — живые обгоны и анимации" width="760" />
 </p>
 
 - **Живые GPU-анимации (F1 / Racelab style)**: плавный слайд строк при обгонах, зелёная/красная вспышка при смене позиции и фиолетовая вспышка нового лучшего круга класса
@@ -34,7 +34,7 @@
 ### Relative
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/relative.gif?v=1.1.11" alt="Z-Overlay Relative Widget" width="760" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/relative.gif?v=1.1.12" alt="Z-Overlay Relative Widget" width="760" />
 </p>
 
 - Ближайшие машины спереди и сзади с точными отрывами в секундах (`CarIdxEstTime`) и динамической авто-шириной колонок (имена и фамилии никогда не обрезаются)
@@ -45,7 +45,7 @@
 ### Input Telemetry
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/inputs.gif?v=1.1.11" alt="Z-Overlay Input Telemetry Widget" width="680" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/inputs.gif?v=1.1.12" alt="Z-Overlay Input Telemetry Widget" width="680" />
 </p>
 
 - **100% модульный виджет** — каждый блок включается и выключается независимо в настройках (график, бары педалей, передача/скорость/RPM, шифт-бар, руль, `BB / TC / ABS`, Delta Bar, полоса минимальных скоростей)
@@ -56,7 +56,7 @@
 ### Fuel Strategy & Radar / Blind Spot
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/fuel-radar.gif?v=1.1.11" alt="Z-Overlay Fuel Strategy and Radar Widgets" width="620" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/fuel-radar.gif?v=1.1.12" alt="Z-Overlay Fuel Strategy and Radar Widgets" width="620" />
 </p>
 
 - **Fuel Strategy**: точный трекер расхода (фильтрует пит-стопы и неполные круги), 3 режима расчёта (**`AVG 5L` / `LAST` / `MAX`**), 3-колоночная матрица долива (**`MIN` | `ADD` | `SAFE`**), число пит-стопов (`NO STOP` / `1 STOP`), расчёт времени дозаправки и целевой расход на экономию (`SAVE`)
@@ -67,11 +67,13 @@
 ## Центр управления (Hub) и кастомизация
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/hub.png?v=1.1.11" alt="Z-Overlay Control Hub" width="760" />
+  <img src="https://raw.githubusercontent.com/astarkulov/z-overlay/main/docs/screenshots/hub.png?v=1.1.12" alt="Z-Overlay Control Hub" width="760" />
 </p>
 
 - **2 встроенные темы в 1 клик**: `iRacing Native` и `Apex Carbon` + раздельная прозрачность подложек (`0–95%`)
 - **Автопоказ только при активном iRacing** — мгновенно скрывает все виджеты при `Alt+Tab` или сворачивании игры
+- **Скрытие вне кокпита для каждого виджета** — индивидуальный тумблер «Скрывать, когда не за рулём» (для `Inputs` включён по умолчанию: скрывает педали в меню, реплее, гараже и у спектатора)
+- **Автообновление в 1 клик через GitHub Releases** — фоновая проверка новых версий, прогресс загрузки и бесшовный перезапуск для установщика и portable `ApexHUD.exe`
 - **Удобный ресайз и масштаб**: тяни любой виджет мышкой за правый край, нижний край или угол (`55% – 250%`), регулируй общий масштаб (`70% – 220%`) и внутренний размер шрифта (`80% – 135%`)
 - **Позиционирование и мультимонитор**: выбор разрешённых мониторов, жёсткие границы экрана, сетка привязки **3×3**, магнитное прилипание (`≤ 14 px`) и точный сдвиг стрелками (`↑ ↓ ← →`, с `Shift` — 10 px)
 - **Выбор шрифтов**: 5 пресетов (`iRacing Native`, `Modern`, `Bahnschrift DIN`, `Rajdhani F1`, `Exo 2`) + любой установленный в Windows шрифт отдельно для текста и цифр
@@ -82,7 +84,7 @@
 ## Быстрый старт
 
 1. Скачай из раздела **[Releases](https://github.com/astarkulov/z-overlay/releases/latest)** любой удобный вариант (требуется [.NET 6 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)):
-   - **`Z-Overlay-Setup-v1.1.11.exe`** — классический установщик Windows (Inno Setup: ярлык на рабочий стол, опция автозапуска с Windows, чистая деинсталляция);
+   - **`Z-Overlay-Setup-v1.1.12.exe`** — классический установщик Windows (Inno Setup: ярлык на рабочий стол, опция автозапуска с Windows, чистая деинсталляция);
    - **`ApexHUD.exe`** — портативный однофайловый вариант (~395 КБ), работает без установки.
 2. Запусти приложение — со старта включён **Демо-режим (60 Гц)**, чтобы сразу расставить виджеты, выбрать тему, масштаб, прозрачность и шрифты.
 3. Нажми **Закрепить для гонки (`Ctrl + Shift + L`)** — все виджеты станут click-through.
@@ -111,7 +113,7 @@ dotnet publish ApexHUD.csproj -c Release -r win-x64 --self-contained false -p:Pu
 .\installer\build-installer.ps1
 ```
 
-Установщик появится в `dist\Z-Overlay-Setup-v1.1.11.exe`.
+Установщик появится в `dist\Z-Overlay-Setup-v1.1.12.exe`.
 
 ---
 

@@ -106,6 +106,16 @@ public sealed class InputGraphCanvas : FrameworkElement
         InvalidateVisual();
     }
 
+    public void Clear()
+    {
+        Array.Clear(_throttle);
+        Array.Clear(_brake);
+        Array.Clear(_clutch);
+        Array.Clear(_abs);
+        _head = 0;
+        InvalidateVisual();
+    }
+
     protected override void OnRender(DrawingContext dc)
     {
         double w = ActualWidth;

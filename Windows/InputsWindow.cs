@@ -589,6 +589,11 @@ public sealed class InputsWindow : OverlayWindowBase
         return (stack, fill, pct);
     }
 
+    public void ResetLiveTrace()
+    {
+        _graph.Clear();
+    }
+
     public void UpdateData(TelemetrySnapshot snap)
     {
         var inp = snap.Inputs;
